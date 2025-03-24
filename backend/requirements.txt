@@ -1,0 +1,17 @@
+fastapi[all]
+SQLAlchemy
+SQLAlchemy-Utils
+alembic
+uvicorn 
+pytz
+pydantic
+inflect
+jinja2
+psycopg2-binary
+greenlet
+protobuf
+python-decouple
+gunicorn
+python-multipart
+pydantic
+pydantic-settings

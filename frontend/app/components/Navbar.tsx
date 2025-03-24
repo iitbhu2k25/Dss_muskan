@@ -86,33 +86,9 @@ const toggleDropdown = (key) => {
 
             {/* Basic Modules */}
             <li className="relative group">
-              <button
-                onClick={() => toggleDropdown('basicModules')}
-                className="text-white font-semibold text-lg px-5 py-2 inline-block relative hover:translate-y-[-2px] transition-all duration-300 hover:after:w-full after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-blue-600 after:transition-all after:duration-300">
-                Basic Modules 
-              </button>
-              <ul className={`${openDropdowns.basicModules ? 'block' : 'hidden'} lg:hidden lg:group-hover:block absolute left-0 top-full bg-white bg-opacity-95 border border-gray-200 border-opacity-10 rounded-lg shadow-lg min-w-[330px] p-3 z-50`}>
-                <li>
-                  <Link href="/population/time-series" className="block px-1 py-2 text-blue-600 font-bold  hover:bg-opacity-10 rounded-md transition duration-200">
-                    Population Estimation and Forecasting
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/waterdemand" className="block px-1 py-2 text-blue-600 font-bold  hover:bg-opacity-10 rounded-md transition duration-200">
-                    Water Demand
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/watersupply" className="block px-1 py-2 text-blue-600 font-bold  hover:bg-opacity-10 rounded-md transition duration-200">
-                    Water Supply
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/sewage" className="block px-1 py-2 text-blue-600 font-bold  hover:bg-opacity-10 rounded-md transition duration-200">
-                    Sewage Generation
-                  </Link>
-                </li>
-              </ul>
+              <Link href="/dss/basic_module" className="text-white font-semibold text-lg px-5 py-2 inline-block relative hover:translate-y-[-2px] transition-all duration-300 hover:after:w-full after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-blue-600 after:transition-all after:duration-300">
+                Basic Module
+              </Link>
             </li>
 
             {/* GWM */}
@@ -571,12 +547,12 @@ const toggleDropdown = (key) => {
               </button>
               <ul className={`${openDropdowns.visualization ? 'block' : 'hidden'} lg:hidden lg:group-hover:block absolute left-0 top-full bg-white bg-opacity-95 border border-gray-200 border-opacity-10 rounded-lg shadow-lg min-w-[150px] p-3 z-50`}>
                 <li>
-                  <Link href="/mapplot" className="block px-1 py-2 text-blue-600 font-bold  hover:bg-opacity-10 rounded-md transition duration-200">
+                  <Link href="/Visuall/vector" className="block px-1 py-2 text-blue-600 font-bold  hover:bg-opacity-10 rounded-md transition duration-200">
                     Vector
                   </Link>
                 </li>
                 <li>
-                  <Link href="/visuall" className="block px-1 py-2 text-blue-600 font-bold  hover:bg-opacity-10 rounded-md transition duration-200">
+                  <Link href="/Visuall/raster" className="block px-1 py-2 text-blue-600 font-bold  hover:bg-opacity-10 rounded-md transition duration-200">
                     Raster
                   </Link>
                 </li>
@@ -587,7 +563,7 @@ const toggleDropdown = (key) => {
             {/* Contact */}
 
             <li className="relative group">
-              <Link href="/contact" className="text-white font-semibold text-lg px-5 py-2 inline-block relative hover:translate-y-[-2px] transition-all duration-300 hover:after:w-full after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-blue-600 after:transition-all after:duration-300">
+              <Link href="/dss/contact" className="text-white font-semibold text-lg px-5 py-2 inline-block relative hover:translate-y-[-2px] transition-all duration-300 hover:after:w-full after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-blue-600 after:transition-all after:duration-300">
                 Contact
               </Link>
             </li>
