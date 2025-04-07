@@ -253,7 +253,7 @@ const Input: React.FC<InputProps> = ({ activeTab }) => {
       )}
     </div>
   );
-
+// Groundwater Contour
   const renderGroundwaterContour = () => (
     <div>
       <h3 className="font-medium text-blue-600 mb-4">Groundwater Contour</h3>
@@ -334,7 +334,7 @@ const Input: React.FC<InputProps> = ({ activeTab }) => {
         <select className="w-full p-2 border rounded-md text-sm">
           <option value="">Select Method...</option>
           <option value="linear">Mann-Kendall Test</option>
-          <option value="mann">Sen’sSlope Estimator</option>
+          <option value="mann">Sen’s Slope Estimator</option>
           <option value="moving">Change Point Analysis</option>
         </select>
       </div>
@@ -427,222 +427,222 @@ const Input: React.FC<InputProps> = ({ activeTab }) => {
         </div>
       </div>
       
-      {/* Linear Regression Section */}
-      {forecastingMethods.linearRegression && (
-        <div className="mb-4 p-3 border border-blue-200 rounded-md bg-blue-50">
-          <h4 className="font-medium text-blue-700 mb-2">Linear Regression Settings</h4>
-          
-          <div className="mb-3">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Training Data Range</label>
-            <select className="w-full p-2 border rounded-md text-sm">
-              <option value="">Select Range...</option>
-              <option value="1year">Last 1 Year</option>
-              <option value="2years">Last 2 Years</option>
-              <option value="5years">Last 5 Years</option>
+      {/* Forecasting Methods Section in Horizontal Scroll */}
+<div className="flex overflow-x-auto space-x-4 pb-2">
+  {/* Linear Regression */}
+  {forecastingMethods.linearRegression && (
+    <div className="min-w-[320px] max-w-[320px] h-[500px] overflow-y-auto p-3 border border-blue-200 rounded-md bg-blue-50">
+      <h4 className="font-medium text-blue-700 mb-2">Linear Regression Settings</h4>
+
+      <div className="mb-3">
+        <label className="block text-sm font-medium text-gray-700 mb-1">Training Data Range</label>
+        <select className="w-full p-2 border rounded-md text-sm">
+          <option value="">Select Range...</option>
+          <option value="1year">Last 1 Year</option>
+          <option value="2years">Last 2 Years</option>
+          <option value="5years">Last 5 Years</option>
+        </select>
+      </div>
+
+      <div className="mb-3">
+        <label className="block text-sm font-medium text-gray-700 mb-1">Prediction Horizon</label>
+        <select className="w-full p-2 border rounded-md text-sm">
+          <option value="">Select Horizon...</option>
+          <option value="3months">3 Months</option>
+          <option value="6months">6 Months</option>
+          <option value="1year">1 Year</option>
+        </select>
+      </div>
+
+      <div className="mb-3">
+        <label className="block text-sm font-medium text-gray-700 mb-1">Model Parameters</label>
+        <div className="flex gap-2">
+          <input
+            type="number"
+            className="flex-1 p-2 border rounded-md text-sm"
+            placeholder="Confidence Level (%)"
+            min="1"
+            max="99"
+            defaultValue="95"
+          />
+          <input type="checkbox" id="intercept" className="hidden" />
+          <label htmlFor="intercept" className="flex items-center text-sm bg-white border rounded-md px-2 cursor-pointer">
+            <span className="mr-1">Include Intercept</span>
+            <input
+              type="checkbox"
+              className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              defaultChecked
+            />
+          </label>
+        </div>
+      </div>
+
+      <button className="w-full bg-blue-500 hover:bg-blue-600 text-white text-sm py-1 px-4 rounded-md">
+        Run Linear Regression
+      </button>
+    </div>
+  )}
+
+  {/* Decision Tree */}
+  {forecastingMethods.decisionTree && (
+    <div className="min-w-[320px] max-w-[320px] h-[500px] overflow-y-auto p-3 border border-green-200 rounded-md bg-green-50">
+      <h4 className="font-medium text-green-700 mb-2">Decision Tree Settings</h4>
+
+      <div className="mb-3">
+        <label className="block text-sm font-medium text-gray-700 mb-1">Tree Depth</label>
+        <input
+          type="range"
+          min="1"
+          max="10"
+          defaultValue="3"
+          className="w-full h-2 bg-green-200 rounded-lg appearance-none cursor-pointer"
+        />
+        <div className="flex justify-between text-xs text-gray-500">
+          <span>Shallow (1)</span>
+          <span>Deep (10)</span>
+        </div>
+      </div>
+
+      <div className="mb-3">
+        <label className="block text-sm font-medium text-gray-700 mb-1">Feature Selection</label>
+        <div className="space-y-1 max-h-28 overflow-y-auto p-2 border rounded-md bg-white">
+          <label className="flex items-center text-xs">
+            <input type="checkbox" className="mr-1" defaultChecked />
+            Groundwater Level
+          </label>
+          <label className="flex items-center text-xs">
+            <input type="checkbox" className="mr-1" defaultChecked />
+            Precipitation
+          </label>
+          <label className="flex items-center text-xs">
+            <input type="checkbox" className="mr-1" defaultChecked />
+            Temperature
+          </label>
+          <label className="flex items-center text-xs">
+            <input type="checkbox" className="mr-1" />
+            Soil Moisture
+          </label>
+          <label className="flex items-center text-xs">
+            <input type="checkbox" className="mr-1" />
+            Evapotranspiration
+          </label>
+          <label className="flex items-center text-xs">
+            <input type="checkbox" className="mr-1" />
+            Pumping Rate
+          </label>
+        </div>
+      </div>
+
+      <div className="mb-3 flex items-center gap-2">
+        <div className="flex-1">
+          <label className="block text-sm font-medium text-gray-700 mb-1">Cross-Validation</label>
+          <select className="w-full p-2 border rounded-md text-sm">
+            <option value="5">5-fold</option>
+            <option value="10">10-fold</option>
+            <option value="none">None</option>
+          </select>
+        </div>
+        <div className="flex-1">
+          <label className="block text-sm font-medium text-gray-700 mb-1">Min Samples Split</label>
+          <input
+            type="number"
+            className="w-full p-2 border rounded-md text-sm"
+            min="2"
+            defaultValue="2"
+          />
+        </div>
+      </div>
+
+      <button className="w-full bg-green-600 hover:bg-green-700 text-white text-sm py-1 px-4 rounded-md">
+        Run Decision Tree
+      </button>
+    </div>
+  )}
+
+  {/* LSTM */}
+  {forecastingMethods.lstm && (
+    <div className="min-w-[320px] max-w-[320px] h-[500px] overflow-y-auto p-3 border border-purple-200 rounded-md bg-purple-50">
+      <h4 className="font-medium text-purple-700 mb-2">LSTM Neural Network Settings</h4>
+
+      <div className="mb-3">
+        <label className="block text-sm font-medium text-gray-700 mb-1">Network Architecture</label>
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <label className="block text-xs text-gray-500 mb-1">Layers</label>
+            <select className="w-full p-2 border rounded-md text-sm" defaultValue="2">
+              <option value="1">1</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+              <option value="4">4</option>
             </select>
           </div>
-          
-          <div className="mb-3">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Prediction Horizon</label>
-            <select className="w-full p-2 border rounded-md text-sm">
-              <option value="">Select Horizon...</option>
-              <option value="3months">3 Months</option>
-              <option value="6months">6 Months</option>
-              <option value="1year">1 Year</option>
+          <div>
+            <label className="block text-xs text-gray-500 mb-1">Units/Layer</label>
+            <select className="w-full p-2 border rounded-md text-sm" defaultValue="64">
+              <option value="32">32</option>
+              <option value="64">64</option>
+              <option value="128">128</option>
+              <option value="256">256</option>
             </select>
           </div>
-          
-          <div className="mb-3">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Model Parameters</label>
-            <div className="flex gap-2">
-              <input 
-                type="number" 
-                className="flex-1 p-2 border rounded-md text-sm"
-                placeholder="Confidence Level (%)"
-                min="1"
-                max="99"
-                defaultValue="95"
-              />
-              <input 
-                type="checkbox" 
-                id="intercept"
-                className="hidden" 
-              />
-              <label htmlFor="intercept" className="flex items-center text-sm bg-white border rounded-md px-2 cursor-pointer">
-                <span className="mr-1">Include Intercept</span>
-                <input
-                  type="checkbox"
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  defaultChecked
-                />
-              </label>
-            </div>
-          </div>
-          
-          <button className="w-full bg-blue-500 hover:bg-blue-600 text-white text-sm py-1 px-4 rounded-md">
-            Run Linear Regression
-          </button>
         </div>
-      )}
-      
-      {/* Decision Tree Section */}
-      {forecastingMethods.decisionTree && (
-        <div className="mb-4 p-3 border border-green-200 rounded-md bg-green-50">
-          <h4 className="font-medium text-green-700 mb-2">Decision Tree Settings</h4>
-          
-          <div className="mb-3">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Tree Depth</label>
-            <input 
-              type="range" 
-              min="1" 
-              max="10"
-              defaultValue="3"
-              className="w-full h-2 bg-green-200 rounded-lg appearance-none cursor-pointer"
+      </div>
+
+      <div className="mb-3">
+        <label className="block text-sm font-medium text-gray-700 mb-1">Training Parameters</label>
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <label className="block text-xs text-gray-500 mb-1">Epochs</label>
+            <input
+              type="number"
+              className="w-full p-2 border rounded-md text-sm"
+              min="1"
+              defaultValue="100"
             />
-            <div className="flex justify-between text-xs text-gray-500">
-              <span>Shallow (1)</span>
-              <span>Deep (10)</span>
-            </div>
           </div>
-          
-          <div className="mb-3">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Feature Selection</label>
-            <div className="space-y-1 max-h-28 overflow-y-auto p-2 border rounded-md bg-white">
-              <label className="flex items-center text-xs">
-                <input type="checkbox" className="mr-1" defaultChecked />
-                Groundwater Level
-              </label>
-              <label className="flex items-center text-xs">
-                <input type="checkbox" className="mr-1" defaultChecked />
-                Precipitation
-              </label>
-              <label className="flex items-center text-xs">
-                <input type="checkbox" className="mr-1" defaultChecked />
-                Temperature
-              </label>
-              <label className="flex items-center text-xs">
-                <input type="checkbox" className="mr-1" />
-                Soil Moisture
-              </label>
-              <label className="flex items-center text-xs">
-                <input type="checkbox" className="mr-1" />
-                Evapotranspiration
-              </label>
-              <label className="flex items-center text-xs">
-                <input type="checkbox" className="mr-1" />
-                Pumping Rate
-              </label>
-            </div>
-          </div>
-          
-          <div className="mb-3 flex items-center gap-2">
-            <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Cross-Validation</label>
-              <select className="w-full p-2 border rounded-md text-sm">
-                <option value="5">5-fold</option>
-                <option value="10">10-fold</option>
-                <option value="none">None</option>
-              </select>
-            </div>
-            <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Min Samples Split</label>
-              <input 
-                type="number" 
-                className="w-full p-2 border rounded-md text-sm"
-                min="2"
-                defaultValue="2"
-              />
-            </div>
-          </div>
-          
-          <button className="w-full bg-green-600 hover:bg-green-700 text-white text-sm py-1 px-4 rounded-md">
-            Run Decision Tree
-          </button>
-        </div>
-      )}
-      
-      {/* LSTM Section */}
-      {forecastingMethods.lstm && (
-        <div className="mb-4 p-3 border border-purple-200 rounded-md bg-purple-50">
-          <h4 className="font-medium text-purple-700 mb-2">LSTM Neural Network Settings</h4>
-          
-          <div className="mb-3">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Network Architecture</label>
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <label className="block text-xs text-gray-500 mb-1">Layers</label>
-                <select className="w-full p-2 border rounded-md text-sm" defaultValue="2">
-                  <option value="1">1</option>
-                  <option value="2">2</option>
-                  <option value="3">3</option>
-                  <option value="4">4</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs text-gray-500 mb-1">Units/Layer</label>
-                <select className="w-full p-2 border rounded-md text-sm" defaultValue="64">
-                  <option value="32">32</option>
-                  <option value="64">64</option>
-                  <option value="128">128</option>
-                  <option value="256">256</option>
-                </select>
-              </div>
-            </div>
-          </div>
-          
-          <div className="mb-3">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Training Parameters</label>
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <label className="block text-xs text-gray-500 mb-1">Epochs</label>
-                <input 
-                  type="number" 
-                  className="w-full p-2 border rounded-md text-sm"
-                  min="1"
-                  defaultValue="100"
-                />
-              </div>
-              <div>
-                <label className="block text-xs text-gray-500 mb-1">Batch Size</label>
-                <select className="w-full p-2 border rounded-md text-sm" defaultValue="32">
-                  <option value="16">16</option>
-                  <option value="32">32</option>
-                  <option value="64">64</option>
-                  <option value="128">128</option>
-                </select>
-              </div>
-            </div>
-          </div>
-          
-          <div className="mb-3">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Sequence Length (Timesteps)</label>
-            <input 
-              type="range" 
-              min="1" 
-              max="24"
-              defaultValue="12"
-              className="w-full h-2 bg-purple-200 rounded-lg appearance-none cursor-pointer"
-            />
-            <div className="flex justify-between text-xs text-gray-500">
-              <span>1 month</span>
-              <span>24 months</span>
-            </div>
-          </div>
-          
-          <div className="mb-3 flex gap-2">
-            <button className="flex-1 bg-purple-600 hover:bg-purple-700 text-white text-sm py-1 px-2 rounded-md">
-              Train Model
-            </button>
-            <button className="flex-1 bg-purple-100 text-purple-700 border border-purple-300 text-sm py-1 px-2 rounded-md">
-              Load Pretrained
-            </button>
-          </div>
-          
-          <div className="text-xs text-gray-500 italic">
-            Note: LSTM training may take several minutes depending on data size and complexity.
+          <div>
+            <label className="block text-xs text-gray-500 mb-1">Batch Size</label>
+            <select className="w-full p-2 border rounded-md text-sm" defaultValue="32">
+              <option value="16">16</option>
+              <option value="32">32</option>
+              <option value="64">64</option>
+              <option value="128">128</option>
+            </select>
           </div>
         </div>
-      )}
+      </div>
+
+      <div className="mb-3">
+        <label className="block text-sm font-medium text-gray-700 mb-1">Sequence Length (Timesteps)</label>
+        <input
+          type="range"
+          min="1"
+          max="24"
+          defaultValue="12"
+          className="w-full h-2 bg-purple-200 rounded-lg appearance-none cursor-pointer"
+        />
+        <div className="flex justify-between text-xs text-gray-500">
+          <span>1 month</span>
+          <span>24 months</span>
+        </div>
+      </div>
+
+      <div className="mb-3 flex gap-2">
+        <button className="flex-1 bg-purple-600 hover:bg-purple-700 text-white text-sm py-1 px-2 rounded-md">
+          Train Model
+        </button>
+        <button className="flex-1 bg-purple-100 text-purple-700 border border-purple-300 text-sm py-1 px-2 rounded-md">
+          Load Pretrained
+        </button>
+      </div>
+
+      <div className="text-xs text-gray-500 italic">
+        Note: LSTM training may take several minutes depending on data size and complexity.
+      </div>
+    </div>
+  )}
+</div>
+
       
       {(forecastingMethods.linearRegression || forecastingMethods.decisionTree || forecastingMethods.lstm) && (
         <button className="w-full bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-md mt-2">

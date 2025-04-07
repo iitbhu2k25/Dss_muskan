@@ -51,18 +51,18 @@ const Dashboard: React.FC = () => {
           <div className="p-8">
             <div className="grid grid-cols-12 gap-4">
               {/* Left Column - Inputs */}
-              <div className="col-span-3 border rounded-md p-4">
+              <div className="col-span-3 border border-gray-300 shadow-lg rounded-md p-4">
                 <Input activeTab={activeTab} />
               </div>
 
               {/* Middle Column - Map Preview */}
-              <div className="col-span-6 border rounded-md p-4 h-full">
+              <div className="col-span-6 border border-gray-100 rounded-md p-4 h-full">
                 <h3 className="text-sm font-medium mb-2">Map Preview</h3>
                 <MapPreview activeTab={activeTab} />
               </div>
 
               {/* Right Column - Visualization & Output */}
-              <div className="col-span-3 border rounded-md p-4">
+              <div className="col-span-3 border border-gray-300 shadow-lg rounded-md p-4">
                 <h3 className="text-sm font-medium mb-2">Visualization & Output</h3>
                 {/* <VisualOutput activeTab={activeTab} /> */}
               </div>
