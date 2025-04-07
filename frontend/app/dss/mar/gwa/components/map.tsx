@@ -48,43 +48,61 @@ const LeafletMapPreview: React.FC<MapPreviewProps> = ({ activeTab }) => {
   // Initialize map
   const initializeMap = () => {
     if (!mapContainerRef.current || !window.L) return;
-    
-    // Create map if it doesn't exist
+  
     if (!mapInstance) {
-      const map = window.L.map(mapContainerRef.current).setView([25.37, 82.57], 13);
-      
-      // Add base layers
+      const map = window.L.map(mapContainerRef.current).setView([22.9734, 78.6569], 5);
+
+  
+      // Base layers
       const osmLayer = window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        attribution: '&copy; OpenStreetMap contributors'
       });
-      
+  
       const satelliteLayer = window.L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-        attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+        attribution: 'Tiles &copy; Esri'
       });
-      
+  
       const topoLayer = window.L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
-        attribution: 'Map data: &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, <a href="http://viewfinderpanoramas.org">SRTM</a> | Map style: &copy; <a href="https://opentopomap.org">OpenTopoMap</a> (<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC-BY-SA</a>)'
+        attribution: 'Map data &copy; OpenStreetMap contributors, SRTM | Map style &copy; OpenTopoMap'
       });
-      
-      // Define base maps
+  
+      const googleStreets = window.L.tileLayer('http://mt1.google.com/vt/lyrs=r&x={x}&y={y}&z={z}', {
+        attribution: '&copy; Google'
+      });
+  
+      const googleHybrid = window.L.tileLayer('http://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+        attribution: '&copy; Google'
+      });
+  
+      const googleTerrain = window.L.tileLayer('http://mt1.google.com/vt/lyrs=p&x={x}&y={y}&z={z}', {
+        attribution: '&copy; Google'
+      });
+  
+      const googleTraffic = window.L.tileLayer('http://mt1.google.com/vt/lyrs=h@221097413,traffic&x={x}&y={y}&z={z}', {
+        attribution: '&copy; Google Traffic'
+      });
+  
       const baseMaps = {
         "OpenStreetMap": osmLayer,
-        "Satellite": satelliteLayer,
-        "Topographic": topoLayer
+        "Satellite (Esri)": satelliteLayer,
+        "Topographic": topoLayer,
+        "Google Streets": googleStreets,
+        "Google Hybrid": googleHybrid,
+        "Google Terrain": googleTerrain,
+        "Google Traffic": googleTraffic,
       };
-      
-      // Add default base layer
-      osmLayer.addTo(map);
-      
-      // Create layer control
+  
+      // Set default layer
+      googleTraffic.addTo(map);
+  
       const controls = window.L.control.layers(baseMaps, {});
       controls.addTo(map);
-      
-      // Store map and controls references
+  
       setMapInstance(map);
       setLayerControls(controls);
     }
   };
+  
 
   // Update layers based on active tab
   useEffect(() => {
