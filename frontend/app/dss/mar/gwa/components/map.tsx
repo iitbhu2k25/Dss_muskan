@@ -3,20 +3,25 @@ import React, { useEffect, useRef, useState } from 'react';
 
 interface MapPreviewProps {
   activeTab: string;
+  showNotification?: (title: string, message: string, type?: string) => void;
 }
 
-const LeafletMapPreview: React.FC<MapPreviewProps> = ({ activeTab }) => {
+const LeafletMapPreview: React.FC<MapPreviewProps> = ({ 
+  activeTab, 
+  showNotification = (title, message) => console.log(`${title}: ${message}`) 
+}) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
-  const [mapInstance, setMapInstance] = useState<any>(null);
-  const [layerControls, setLayerControls] = useState<any>(null);
-  const [drawControl, setDrawControl] = useState<any>(null);
-  const [selectedFeature, setSelectedFeature] = useState<any>(null);
+  const mapInstanceRef = useRef<any>(null);
+  const drawnItemsRef = useRef<any>(null);
+  const compassRef = useRef<any>(null);
   const [coordinates, setCoordinates] = useState<string>('');
   const [showCompass, setShowCompass] = useState<boolean>(true);
-  const compassRef = useRef<any>(null);
+  const [selectedFeature, setSelectedFeature] = useState<any>(null);
+  const [baseLayers, setBaseLayers] = useState<any>({});
 
-  // Load Leaflet CSS and JS
+  // Load Leaflet dependencies
   useEffect(() => {
+    // Load CSS files
     if (!document.getElementById('leaflet-css')) {
       const leafletCSS = document.createElement('link');
       leafletCSS.id = 'leaflet-css';
@@ -27,7 +32,6 @@ const LeafletMapPreview: React.FC<MapPreviewProps> = ({ activeTab }) => {
       document.head.appendChild(leafletCSS);
     }
 
-    // Load Leaflet Draw CSS
     if (!document.getElementById('leaflet-draw-css')) {
       const leafletDrawCSS = document.createElement('link');
       leafletDrawCSS.id = 'leaflet-draw-css';
@@ -36,15 +40,16 @@ const LeafletMapPreview: React.FC<MapPreviewProps> = ({ activeTab }) => {
       document.head.appendChild(leafletDrawCSS);
     }
 
+    // Load JS libraries
     const loadLeaflet = () => {
       return new Promise<void>((resolve) => {
         if (!window.L) {
-          const leafletScript = document.createElement('script');
-          leafletScript.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
-          leafletScript.integrity = 'sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=';
-          leafletScript.crossOrigin = '';
-          leafletScript.onload = () => resolve();
-          document.body.appendChild(leafletScript);
+          const script = document.createElement('script');
+          script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+          script.integrity = 'sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=';
+          script.crossOrigin = '';
+          script.onload = () => resolve();
+          document.body.appendChild(script);
         } else {
           resolve();
         }
@@ -54,10 +59,10 @@ const LeafletMapPreview: React.FC<MapPreviewProps> = ({ activeTab }) => {
     const loadLeafletDraw = () => {
       return new Promise<void>((resolve) => {
         if (window.L && !window.L.Draw) {
-          const leafletDrawScript = document.createElement('script');
-          leafletDrawScript.src = 'https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js';
-          leafletDrawScript.onload = () => resolve();
-          document.body.appendChild(leafletDrawScript);
+          const script = document.createElement('script');
+          script.src = 'https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js';
+          script.onload = () => resolve();
+          document.body.appendChild(script);
         } else if (window.L && window.L.Draw) {
           resolve();
         }
@@ -72,52 +77,74 @@ const LeafletMapPreview: React.FC<MapPreviewProps> = ({ activeTab }) => {
 
     setupMap();
 
+    // Cleanup function
     return () => {
-      if (mapInstance) {
-        mapInstance.remove();
+      if (mapInstanceRef.current) {
+        // Just remove event listeners, not the map itself
+        mapInstanceRef.current.off();
       }
     };
   }, []);
 
   const initializeMap = () => {
-    if (!mapContainerRef.current || !window.L) return;
-    if (mapInstance) return;
+    if (!mapContainerRef.current || !window.L || mapInstanceRef.current) return;
 
-    const map = window.L.map(mapContainerRef.current).setView([22.9734, 78.6569], 5);
+    // Fix icon paths for markers
+    delete window.L.Icon.Default.prototype._getIconUrl;
+    window.L.Icon.Default.mergeOptions({
+      iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+      iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+      shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+    });
 
+    // Create map
+    const map = window.L.map(mapContainerRef.current, {
+      zoomControl: false,
+      drawControl: false,
+    }).setView([22.9734, 78.6569], 5);
+
+    // Define basemap layers
     const osmLayer = window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; OpenStreetMap contributors'
+      attribution: '&copy; OpenStreetMap contributors',
+      maxZoom: 19,
     });
 
     const satelliteLayer = window.L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-      attribution: 'Tiles &copy; Esri'
+      attribution: 'Tiles &copy; Esri',
+      maxZoom: 19,
     });
 
     const topoLayer = window.L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
-      attribution: 'Map data &copy; OpenStreetMap contributors, SRTM | Map style &copy; OpenTopoMap'
+      attribution: 'Map data &copy; OpenStreetMap contributors, SRTM | Map style &copy; OpenTopoMap',
+      maxZoom: 17,
     });
 
     const googleStreets = window.L.tileLayer('http://mt1.google.com/vt/lyrs=r&x={x}&y={y}&z={z}', {
-      attribution: '&copy; Google'
+      attribution: '&copy; Google',
+      maxZoom: 20,
     });
 
     const googleHybrid = window.L.tileLayer('http://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
-      attribution: '&copy; Google'
+      attribution: '&copy; Google',
+      maxZoom: 20,
     });
 
     const googleTerrain = window.L.tileLayer('http://mt1.google.com/vt/lyrs=p&x={x}&y={y}&z={z}', {
-      attribution: '&copy; Google'
+      attribution: '&copy; Google',
+      maxZoom: 20,
     });
     
     const googleTraffic = window.L.tileLayer('https://{s}.google.com/vt/lyrs=m@221097413,traffic&x={x}&y={y}&z={z}', {
       subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
       attribution: '&copy; <a href="https://www.google.com/maps">Google Traffic</a>',
+      maxZoom: 20,
     });
-    
-    const baseMaps = {
-      "Google Traffic": googleTraffic, // Moved to the top so it's the first option in the control
+
+    // Organize base layers
+    const newBaseLayers = {
+      "Google Traffic": googleTraffic,
       "OpenStreetMap": osmLayer,
-      "Satellite (Esri)": satelliteLayer,
+      "Satellite": satelliteLayer,
       "Topographic": topoLayer,
       "Google Streets": googleStreets,
       "Google Hybrid": googleHybrid,
@@ -127,12 +154,20 @@ const LeafletMapPreview: React.FC<MapPreviewProps> = ({ activeTab }) => {
     // Add Google Traffic as the default layer
     googleTraffic.addTo(map);
 
-    const controls = window.L.control.layers(baseMaps, {});
-    controls.addTo(map);
+    // Layer control
+    const layerControl = window.L.control.layers(newBaseLayers, {});
+    layerControl.addTo(map);
+
+    // Scale control
+    window.L.control.scale({
+      imperial: false,
+      position: 'bottomleft',
+    }).addTo(map);
 
     // Create feature group for drawn items
     const drawnItems = new window.L.FeatureGroup();
     map.addLayer(drawnItems);
+    drawnItemsRef.current = drawnItems;
 
     // Add drawing controls
     const drawControlOptions = {
@@ -184,22 +219,149 @@ const LeafletMapPreview: React.FC<MapPreviewProps> = ({ activeTab }) => {
       layer.on('click', function() {
         selectFeature(layer);
         
-        // If it's a marker, show coordinates
+        // Show specific information based on feature type
         if (layer instanceof window.L.Marker) {
           const latLng = layer.getLatLng();
           setCoordinates(`Marker at: ${latLng.lat.toFixed(6)}, ${latLng.lng.toFixed(6)}`);
+          layer.bindPopup(`<strong>Coordinates:</strong><br>Lat: ${latLng.lat.toFixed(5)}<br>Lng: ${latLng.lng.toFixed(5)}`)
+               .openPopup();
+        } else if (layer instanceof window.L.Polygon) {
+          // Calculate area (simplified calculation)
+          const latlngs = layer.getLatLngs()[0];
+          let area = 0;
+          for (let i = 0; i < latlngs.length; i++) {
+            const j = (i + 1) % latlngs.length;
+            area += latlngs[i].lng * latlngs[j].lat;
+            area -= latlngs[j].lng * latlngs[i].lat;
+          }
+          area = Math.abs(area) * 0.5 * 111.32 * 111.32; // Rough conversion to square km
+          
+          layer.bindPopup(`<strong>Area:</strong> ${area.toFixed(2)} sq km`)
+               .openPopup();
+        } else if (layer instanceof window.L.Polyline && !(layer instanceof window.L.Polygon)) {
+          // Calculate length
+          const latlngs = layer.getLatLngs();
+          let length = 0;
+          
+          for (let i = 0; i < latlngs.length - 1; i++) {
+            length += latlngs[i].distanceTo(latlngs[i + 1]);
+          }
+          
+          layer.bindPopup(`<strong>Length:</strong> ${(length / 1000).toFixed(2)} km`)
+               .openPopup();
+        } else if (layer instanceof window.L.Circle) {
+          const radius = layer.getRadius();
+          layer.bindPopup(`<strong>Radius:</strong> ${radius.toFixed(2)} meters`)
+               .openPopup();
         }
       });
       
-      // Re-enable drawing tools after a shape is created
-      drawControl.setDrawingOptions(drawControlOptions.draw);
-      map.addControl(drawControl);
+      showNotification(
+        "Drawing Complete",
+        "Your drawing has been added to the map",
+        "success"
+      );
+    });
+
+    // Handle editing events
+    map.on('draw:edited', function(e: any) {
+      const layers = e.layers;
+      let count = 0;
+      
+      layers.eachLayer(function(layer: any) {
+        count++;
+        
+        // Update popups for the edited features
+        if (layer instanceof window.L.Polygon) {
+          const latlngs = layer.getLatLngs()[0];
+          
+          // Recalculate area
+          let area = 0;
+          for (let i = 0; i < latlngs.length; i++) {
+            const j = (i + 1) % latlngs.length;
+            area += latlngs[i].lng * latlngs[j].lat;
+            area -= latlngs[j].lng * latlngs[i].lat;
+          }
+          area = Math.abs(area) * 0.5 * 111.32 * 111.32;
+          
+          layer.setPopupContent(`<strong>Area:</strong> ${area.toFixed(2)} sq km`);
+        } else if (layer instanceof window.L.Circle) {
+          const radius = layer.getRadius();
+          layer.setPopupContent(`<strong>Radius:</strong> ${radius.toFixed(2)} meters`);
+        } else if (layer instanceof window.L.Polyline && !(layer instanceof window.L.Polygon)) {
+          const latlngs = layer.getLatLngs();
+          let length = 0;
+          
+          for (let i = 0; i < latlngs.length - 1; i++) {
+            length += latlngs[i].distanceTo(latlngs[i + 1]);
+          }
+          
+          layer.setPopupContent(`<strong>Length:</strong> ${(length / 1000).toFixed(2)} km`);
+        } else if (layer instanceof window.L.Marker) {
+          const latLng = layer.getLatLng();
+          layer.setPopupContent(
+            `<strong>Coordinates:</strong><br>Lat: ${latLng.lat.toFixed(5)}<br>Lng: ${latLng.lng.toFixed(5)}`
+          );
+        }
+      });
+      
+      showNotification(
+        "Edit Successful",
+        `${count} ${count === 1 ? 'layer' : 'layers'} edited`,
+        "success"
+      );
+    });
+
+    // Handle delete events
+    map.on('draw:deleted', function(e: any) {
+      const layers = e.layers;
+      let count = 0;
+      
+      layers.eachLayer(function() {
+        count++;
+      });
+      
+      showNotification(
+        "Delete Successful",
+        `${count} ${count === 1 ? 'layer' : 'layers'} deleted`,
+        "success"
+      );
     });
 
     // Update coordinates on mouse move
     map.on('mousemove', function(e: any) {
       const { lat, lng } = e.latlng;
       setCoordinates(`${lat.toFixed(6)}, ${lng.toFixed(6)}`);
+    });
+
+    // Fix for draw control events
+    map.on('draw:drawstart', function() {
+      // Disable layer selection while drawing to avoid conflicts
+      map.off('click');
+    });
+    
+    map.on('draw:drawstop', function() {
+      // Re-enable layer selection after drawing is complete
+      map.on('click', function(e: any) {
+        // Check if the click is on an existing feature
+        const clickPoint = e.latlng;
+        let clickedLayer = null;
+        
+        drawnItems.eachLayer(function(layer: any) {
+          // For polygons, polylines, circles, rectangles
+          if (layer.getBounds && layer.contains && layer.contains(clickPoint)) {
+            clickedLayer = layer;
+          }
+          // For markers
+          else if (layer.getLatLng && layer.getLatLng().distanceTo(clickPoint) < 20) {
+            clickedLayer = layer;
+          }
+        });
+        
+        if (clickedLayer) {
+          selectFeature(clickedLayer);
+        }
+      });
     });
 
     // Add compass (North arrow)
@@ -232,6 +394,7 @@ const LeafletMapPreview: React.FC<MapPreviewProps> = ({ activeTab }) => {
         drawnItems.clearLayers();
         setSelectedFeature(null);
         setCoordinates('');
+        showNotification("Cleared", "All drawings have been removed from the map", "info");
       };
       return div;
     };
@@ -252,44 +415,21 @@ const LeafletMapPreview: React.FC<MapPreviewProps> = ({ activeTab }) => {
         if (compassRef.current) {
           compassRef.current.style.display = newShowCompass ? 'block' : 'none';
         }
+        showNotification("Compass", newShowCompass ? "Compass is now visible" : "Compass is now hidden", "info");
       };
       return div;
     };
     toggleCompassControl.addTo(map);
 
-    // Fix for draw control events
-    map.on('draw:drawstart', function() {
-      // Disable layer selection while drawing to avoid conflicts
-      map.off('click');
+    // Add zoom controls
+    const zoomControl = window.L.control.zoom({
+      position: 'topright'
     });
-    
-    map.on('draw:drawstop', function() {
-      // Re-enable layer selection after drawing is complete
-      map.on('click', function(e: any) {
-        // Check if the click is on an existing feature
-        const clickPoint = e.latlng;
-        let clickedLayer = null;
-        
-        drawnItems.eachLayer(function(layer: any) {
-          // For polygons, polylines, circles, rectangles
-          if (layer.getBounds && layer.contains && layer.contains(clickPoint)) {
-            clickedLayer = layer;
-          }
-          // For markers
-          else if (layer.getLatLng && layer.getLatLng().distanceTo(clickPoint) < 20) {
-            clickedLayer = layer;
-          }
-        });
-        
-        if (clickedLayer) {
-          selectFeature(clickedLayer);
-        }
-      });
-    });
+    zoomControl.addTo(map);
 
-    setMapInstance(map);
-    setLayerControls(controls);
-    setDrawControl(drawControl);
+    // Store map instance and baseLayers
+    mapInstanceRef.current = map;
+    setBaseLayers(newBaseLayers);
   };
 
   // Function to select a feature and deselect others
@@ -325,29 +465,77 @@ const LeafletMapPreview: React.FC<MapPreviewProps> = ({ activeTab }) => {
     }
   };
 
-  // Effect to handle compass visibility changes
+  // Handle compass visibility changes
   useEffect(() => {
     if (compassRef.current) {
       compassRef.current.style.display = showCompass ? 'block' : 'none';
     }
   }, [showCompass]);
 
+  // Handle active tab changes
   useEffect(() => {
-    if (!mapInstance || !layerControls) return;
+    if (mapInstanceRef.current) {
+      setTimeout(() => {
+        mapInstanceRef.current.invalidateSize();
+      }, 300);
+    }
+  }, [activeTab]);
 
-    mapInstance.eachLayer((layer: any) => {
-      if (layer._url === undefined || layer._url.indexOf('tile') === -1) {
-        mapInstance.removeLayer(layer);
+  // Function to change basemap
+  const changeBasemap = (basemapId: string) => {
+    if (!mapInstanceRef.current || !baseLayers) return;
+    
+    // Remove all current base layers
+    Object.values(baseLayers).forEach((layer: any) => {
+      if (mapInstanceRef.current.hasLayer(layer)) {
+        mapInstanceRef.current.removeLayer(layer);
       }
     });
-  }, [activeTab, mapInstance, layerControls]);
+
+    // Add selected layer
+    if (basemapId !== 'none' && baseLayers[basemapId]) {
+      mapInstanceRef.current.addLayer(baseLayers[basemapId]);
+    }
+
+    // Show notification
+    const basemapName = basemapId.charAt(0).toUpperCase() + basemapId.slice(1);
+    showNotification(
+      "Basemap Changed",
+      `Switched to ${basemapName} basemap`,
+      "info"
+    );
+  };
 
   return (
     <div className="flex flex-col h-full">
+      <div className="mb-3 flex space-x-2">
+        {/* <button 
+          onClick={() => changeBasemap("Google Traffic")}
+          className="px-3 py-1.5 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors">
+          Traffic
+        </button>
+        <button 
+          onClick={() => changeBasemap("OpenStreetMap")}
+          className="px-3 py-1.5 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors">
+          OSM
+        </button>
+        <button 
+          onClick={() => changeBasemap("Satellite")}
+          className="px-3 py-1.5 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors">
+          Satellite
+        </button>
+        <button 
+          onClick={() => changeBasemap("Google Hybrid")}
+          className="px-3 py-1.5 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors">
+          Hybrid
+        </button> */}
+      </div>
+      
       <div
         ref={mapContainerRef}
         className="w-full h-[700px] border rounded-md overflow-hidden shadow-md"
       />
+      
       <div className="mt-2 p-2 bg-gray-100 rounded-md">
         <p className="text-sm font-medium">Coordinates: {coordinates}</p>
         {selectedFeature && (
