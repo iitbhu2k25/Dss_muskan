@@ -365,12 +365,12 @@ const LeafletMapPreview: React.FC<MapPreviewProps> = ({
     });
 
     // Add compass (North arrow)
-    const compassControl = window.L.control({position: 'topright'});
+    const compassControl = window.L.control({position: 'topleft'});
     compassControl.onAdd = function() {
       const div = window.L.DomUtil.create('div', 'compass-control');
       div.innerHTML = `
         <div style="background-color: white; padding: 5px; border-radius: 5px; box-shadow: 0 0 5px rgba(0,0,0,0.3);">
-          <svg width="30" height="30" viewBox="0 0 100 100">
+          <svg width="40" height="40" viewBox="0 0 100 100">
             <polygon points="50,0 40,40 50,30 60,40" fill="#e74c3c" />
             <polygon points="50,100 40,60 50,70 60,60" fill="#3498db" />
           </svg>
