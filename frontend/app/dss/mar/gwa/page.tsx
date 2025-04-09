@@ -1,11 +1,11 @@
 'use client';
 // app/components/Dashboard.tsx
 import React, { useState } from 'react';
-import Input from './components/input';
 import MapPreview from './components/map';
-
-
-
+import GroundwaterSustainability from './components/GroundwaterSustainability';
+import TimeSeriesAnalysis from './components/TimeSeriesAnalysis';
+import GroundwaterTrend from './components/GroundwaterTrend';
+import GroundwaterContour from './components/GroundwaterContour';
 
 type TabType = 'groundwater-contour' | 'groundwater-trend' | 'time-series-analysis' | 'groundwater-recharge';
 
@@ -16,6 +16,8 @@ interface TabConfig {
 
 const Dashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabType>('groundwater-contour');
+  // Add state for GeoJSON data to share between components
+  const [geoJsonData, setGeoJsonData] = useState<any>(null);
 
   const tabs: TabConfig[] = [
     { id: 'groundwater-contour', label: 'Groundwater Contour' },
@@ -23,6 +25,34 @@ const Dashboard: React.FC = () => {
     { id: 'time-series-analysis', label: 'Time Series Analysis and Forecasting' },
     { id: 'groundwater-recharge', label: 'Groundwater Sustainability Recharge' }
   ];
+
+  // Function to show notifications
+  const showNotification = (title: string, message: string, type: string = 'info') => {
+    console.log(`${title}: ${message} (${type})`);
+    // You can implement a proper notification system here if you have one
+  };
+
+  // Function to render the appropriate component based on active tab
+  const renderInputComponent = () => {
+    switch (activeTab) {
+      case 'groundwater-contour':
+        return <GroundwaterContour 
+                 activeTab={activeTab} 
+                 onGeoJsonData={setGeoJsonData} // Pass the callback
+               />;
+      case 'groundwater-trend':
+        return <GroundwaterTrend activeTab={activeTab} />;
+      case 'time-series-analysis':
+        return <TimeSeriesAnalysis activeTab={activeTab} />;
+      case 'groundwater-recharge':
+        return <GroundwaterSustainability activeTab={activeTab} />;
+      default:
+        return <GroundwaterContour 
+                 activeTab={activeTab} 
+                 onGeoJsonData={setGeoJsonData} // Pass the callback
+               />;
+    }
+  };
 
   return (
     <div className="flex flex-col w-full h-full bg-gray-100">
@@ -52,13 +82,17 @@ const Dashboard: React.FC = () => {
             <div className="grid grid-cols-12 gap-4">
               {/* Left Column - Inputs */}
               <div className="col-span-3 border border-gray-300 shadow-lg rounded-md p-4">
-                <Input activeTab={activeTab} />
+                {renderInputComponent()}
               </div>
 
               {/* Middle Column - Map Preview */}
               <div className="col-span-6 border border-gray-100 rounded-md p-4 h-full">
                 <h3 className="text-sm font-medium mb-2">Map Preview</h3>
-                <MapPreview activeTab={activeTab} />
+                <MapPreview 
+                  activeTab={activeTab} 
+                  geoJsonData={geoJsonData} // Pass GeoJSON data to map
+                  showNotification={showNotification} 
+                />
               </div>
 
               {/* Right Column - Visualization & Output */}
