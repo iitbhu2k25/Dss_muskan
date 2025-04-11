@@ -249,9 +249,6 @@ const GroundwaterTrend: React.FC<GroundwaterTrendProps> = ({ activeTab }) => {
   return (
     <div className="h-full overflow-auto flex flex-col">
       <h3 className="font-medium text-blue-600 mb-4">Groundwater Trend</h3>
-      
-      {renderWellSelection()}
-      
       <div className="mb-4">
         <label className="block text-sm font-medium text-gray-700 mb-1">Method for Computing Trend</label>
         <select className="w-full p-2 border rounded-md text-sm">

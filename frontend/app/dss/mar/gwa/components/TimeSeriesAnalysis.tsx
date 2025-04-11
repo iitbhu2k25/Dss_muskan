@@ -303,7 +303,7 @@ const TimeSeriesAnalysis: React.FC<TimeSeriesAnalysisProps> = ({ activeTab }) =>
       {/* Forecasting Methods Section in Horizontal Scroll */}
       <div className="flex overflow-x-auto space-x-4 pb-2">
         {/* Linear Regression */}
-        {forecastingMethods.linearRegression && (
+        {/* {forecastingMethods.linearRegression && (
           <div className="min-w-[320px] max-w-[320px] h-[500px] overflow-y-auto p-3 border border-blue-200 rounded-md bg-blue-50">
             <h4 className="font-medium text-blue-700 mb-2">Linear Regression Settings</h4>
 
@@ -354,10 +354,10 @@ const TimeSeriesAnalysis: React.FC<TimeSeriesAnalysisProps> = ({ activeTab }) =>
               Run Linear Regression
             </button>
           </div>
-        )}
+        )} */}
 
         {/* Decision Tree */}
-        {forecastingMethods.decisionTree && (
+        {/* {forecastingMethods.decisionTree && (
           <div className="min-w-[320px] max-w-[320px] h-[500px] overflow-y-auto p-3 border border-green-200 rounded-md bg-green-50">
             <h4 className="font-medium text-green-700 mb-2">Decision Tree Settings</h4>
 
@@ -430,10 +430,10 @@ const TimeSeriesAnalysis: React.FC<TimeSeriesAnalysisProps> = ({ activeTab }) =>
               Run Decision Tree
             </button>
           </div>
-        )}
+        )} */}
 
         {/* LSTM */}
-        {forecastingMethods.lstm && (
+        {/* {forecastingMethods.lstm && (
           <div className="min-w-[320px] max-w-[320px] h-[500px] overflow-y-auto p-3 border border-purple-200 rounded-md bg-purple-50">
             <h4 className="font-medium text-purple-700 mb-2">LSTM Neural Network Settings</h4>
 
@@ -513,7 +513,7 @@ const TimeSeriesAnalysis: React.FC<TimeSeriesAnalysisProps> = ({ activeTab }) =>
               Note: LSTM training may take several minutes depending on data size and complexity.
             </div>
           </div>
-        )}
+        )} */}
       </div>
       
       {(forecastingMethods.linearRegression || forecastingMethods.decisionTree || forecastingMethods.lstm) && (
@@ -528,23 +528,21 @@ const TimeSeriesAnalysis: React.FC<TimeSeriesAnalysisProps> = ({ activeTab }) =>
     <div className="h-full overflow-auto flex flex-col">
       <h3 className="font-medium text-blue-600 mb-4">Time Series Analysis</h3>
       
-      {renderWellSelection()}
-      
-      <div className="mb-4">
-        <label className="block text-sm font-medium text-gray-700 mb-1">Analysis Method</label>
-        <select className="w-full p-2 border rounded-md text-sm">
-          <option value="">Select Method...</option>
-          <option value="arima">ARIMA Model</option>
-          <option value="seasonal">Seasonal Decomposition</option>
-          <option value="spectral">Spectral Analysis</option>
-        </select>
-      </div>
-      
+      {/* {renderWellSelection()} */}
       <div className="mb-4">
         <label className="block text-sm font-medium text-gray-700 mb-1">Select Well Points</label>
         <select className="w-full p-2 border rounded-md text-sm">
           <option value="">Select all well points</option>
           <option value="3months">Select well points from the map</option>
+        </select>
+      </div>
+      <div className="mb-4">
+        <label className="block text-sm font-medium text-gray-700 mb-1">Choose Parameter</label>
+        <select className="w-full p-2 border rounded-md text-sm">
+          <option value="">Select Parameter...</option>
+          <option value="arima">Parameter 1</option>
+          <option value="seasonal">Parameter 2</option>
+          <option value="spectral">Parameter 3</option>
         </select>
       </div>
       

@@ -2,12 +2,12 @@ import React, { useState, useRef, useEffect } from 'react';
 
 interface GroundwaterContourProps {
   activeTab: string;
-  onGeoJsonData?: (data: any) => void;
+  onGeoJsonData?: (data: any) => void;  // Add this new prop
 }
 
 const GroundwaterContour: React.FC<GroundwaterContourProps> = ({ 
   activeTab,
-  onGeoJsonData = () => {}
+  onGeoJsonData = () => {}  // Default empty function
 }) => {
   // State for data selection
   const [selectionType, setSelectionType] = useState('');
@@ -16,10 +16,6 @@ const GroundwaterContour: React.FC<GroundwaterContourProps> = ({
   const [uploadSuccess, setUploadSuccess] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [geoJsonData, setGeoJsonData] = useState<any>(null);
-  
-  // New error and loading states
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   // State for groundwater contour
   const [interpolationMethod, setInterpolationMethod] = useState('');
@@ -34,6 +30,7 @@ const GroundwaterContour: React.FC<GroundwaterContourProps> = ({
   // Sample data for existing wells
   const existingWells = [
     { id: 'well-1', name: 'Wells Points' }
+    
   ];
 
   // Reset selection state when activeTab changes
@@ -43,14 +40,12 @@ const GroundwaterContour: React.FC<GroundwaterContourProps> = ({
     setSelectedWell('');
     setSelectedFile(null);
     setUploadSuccess(false);
-    setError(null); // Reset error state too
   }, [activeTab]);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files.length > 0) {
       setSelectedFile(event.target.files[0]);
       setUploadSuccess(false);
-      setError(null); // Clear previous errors
     }
   };
   
@@ -58,7 +53,6 @@ const GroundwaterContour: React.FC<GroundwaterContourProps> = ({
     if (selectionType === 'browse' && selectedFile) {
       // Simulate upload process
       setIsUploading(true);
-      setError(null); // Clear previous errors
       
       // Simulate API call with timeout
       setTimeout(() => {
@@ -69,56 +63,19 @@ const GroundwaterContour: React.FC<GroundwaterContourProps> = ({
   };
   
   const handlePlot = async () => {
-    // Extract the ID part (without "well-" prefix)
-    let wellId = selectedWell ? selectedWell.replace('well-', '') : '1';
-    
-    setIsLoading(true);
-    setError(null);
+    let wellGroupId = selectedWell || '1'; // fallback if always using "well-1"
     
     try {
-      console.log(`Fetching GeoJSON for well ID: ${wellId}`);
+      // Update the URL to include the /api/gwa/ prefix based on your project-level URLs
+      const response = await fetch(`http://localhost:9000/api/gwa/get-well-geojson/?id=${wellGroupId}`);
       
-      // Full URL with explicit protocol and port
-      const apiUrl = `http://localhost:9000/api/gwa/get-well-geojson/?id=${wellId}`;
-      console.log(`Making request to: ${apiUrl}`);
-      
-      const response = await fetch(apiUrl, {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json',
-        },
-        // Include credentials if your API requires authentication
-        // credentials: 'include',
-      });
-      
-      console.log('Response status:', response.status);
-      
-      if (!response.ok) {
-        // Try to get detailed error if available
-        let errorMessage = `Failed to fetch GeoJSON: ${response.status} ${response.statusText}`;
-        try {
-          const errorData = await response.json();
-          console.error('Error response:', errorData);
-          if (errorData && errorData.error) {
-            errorMessage = `Server error: ${errorData.error}`;
-          }
-        } catch (parseError) {
-          console.error('Could not parse error response as JSON');
-        }
-        throw new Error(errorMessage);
-      }
-      
+      if (!response.ok) throw new Error('Failed to fetch GeoJSON');
       const data = await response.json();
-      console.log('GeoJSON fetched successfully:', data);
-      
-      setGeoJsonData(data);
+      setGeoJsonData(data); // Store locally
       onGeoJsonData(data); // Pass to parent component for map
+      console.log('GeoJSON:', data);
     } catch (error) {
       console.error('Error fetching GeoJSON:', error);
-      setError(error instanceof Error ? error.message : 'Failed to fetch GeoJSON data');
-      setGeoJsonData(null);
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -147,7 +104,6 @@ const GroundwaterContour: React.FC<GroundwaterContourProps> = ({
           setSelectedWell('');
           setSelectedFile(null);
           setUploadSuccess(false);
-          setError(null); // Clear any errors
         }}
       >
         <option value="">Select an option...</option>
@@ -160,62 +116,29 @@ const GroundwaterContour: React.FC<GroundwaterContourProps> = ({
           <select 
             className="w-full p-2 border rounded-md text-sm"
             value={selectedWell}
-            onChange={(e) => {
-              setSelectedWell(e.target.value);
-              setError(null); // Clear any errors
-            }}
+            onChange={(e) => setSelectedWell(e.target.value)}
           >
             <option value="">Select well group...</option>
             {existingWells
-              .filter(well => well.id === 'well-1')
-              .map(well => (
-                <option key={well.id} value={well.id}>{well.name}</option>
-              ))
-            }
+            .filter(well => well.id === 'well-1')
+            .map(well => (
+            <option key={well.id} value={well.id}>{well.name}</option>
+            ))}
           </select>
           
           {selectedWell && (
-            <div className="flex flex-col gap-2 mt-2">
+            <div className="flex gap-2 mt-2">
               <button 
-                className={`bg-blue-500 text-white text-sm py-1 px-3 rounded-md flex items-center justify-center ${
-                  isLoading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-blue-600'
-                }`}
+                className="bg-blue-500 text-white text-sm py-1 px-3 rounded-md flex items-center"
                 onClick={handlePlot}
-                disabled={isLoading}
               >
-                {isLoading ? (
-                  <>
-                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Loading...
-                  </>
-                ) : (
-                  <span>Plot</span>
-                )}
+                <span>Plot</span>
               </button>
-              
-              {/* Error message */}
-              {error && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded-md text-xs">
-                  <p className="font-medium">Error</p>
-                  <p>{error}</p>
-                </div>
-              )}
-              
-              {/* Success message when data is loaded */}
-              {geoJsonData && !error && !isLoading && (
-                <div className="bg-green-50 border border-green-200 text-green-700 px-3 py-2 rounded-md text-xs">
-                  <p>GeoJSON data loaded successfully!</p>
-                </div>
-              )}
             </div>
           )}
         </div>
       )}
       
-      {/* Rest of the component remains the same */}
       {selectionType === 'browse' && (
         <div className="mt-2">
           <div className="border-2 border-dashed border-gray-300 rounded-md p-4">
@@ -326,7 +249,6 @@ const GroundwaterContour: React.FC<GroundwaterContourProps> = ({
                   <button 
                     className="flex-1 bg-blue-500 hover:bg-blue-600 text-white text-sm py-1 px-3 rounded-md flex items-center justify-center"
                     onClick={handlePlot}
-                    disabled={isLoading}
                   >
                     <span>Plot</span>
                   </button>
@@ -337,14 +259,6 @@ const GroundwaterContour: React.FC<GroundwaterContourProps> = ({
                 <p className="text-xs text-green-600 mt-1 text-center">
                   File successfully uploaded!
                 </p>
-              )}
-              
-              {/* Error message for file upload */}
-              {error && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded-md text-xs mt-2">
-                  <p className="font-medium">Error</p>
-                  <p>{error}</p>
-                </div>
               )}
             </div>
           )}
@@ -357,7 +271,7 @@ const GroundwaterContour: React.FC<GroundwaterContourProps> = ({
     <div className="h-full overflow-auto flex flex-col">
       <h3 className="font-medium text-blue-600 mb-4">Groundwater Contour</h3>
       
-      {renderWellSelection()}
+      {/* {renderWellSelection()} */}
       
       <div className="mb-4">
         <label className="block text-sm font-medium text-gray-700 mb-1">Method of Interpolation</label>
@@ -416,12 +330,7 @@ const GroundwaterContour: React.FC<GroundwaterContourProps> = ({
         />
       </div>
       
-      <button 
-        className={`w-full bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-md ${
-          !geoJsonData || isLoading ? 'opacity-50 cursor-not-allowed' : ''
-        }`}
-        disabled={!geoJsonData || isLoading}
-      >
+      <button className="w-full bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-md">
         Apply
       </button>
     </div>

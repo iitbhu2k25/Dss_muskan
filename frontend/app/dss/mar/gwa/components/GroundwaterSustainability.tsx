@@ -14,10 +14,6 @@ const GroundwaterSustainability: React.FC<GroundwaterSustainabilityProps> = ({ a
   
   // State for demand data selection
   const [demandSelectionType, setDemandSelectionType] = useState('');
-  const [demandSelectedWell, setDemandSelectedWell] = useState('');
-  const [demandSelectedFile, setDemandSelectedFile] = useState<File | null>(null);
-  const [demandUploadSuccess, setDemandUploadSuccess] = useState(false);
-  const [demandIsUploading, setDemandIsUploading] = useState(false);
   
   // State for tooltip
   const [showInfoTooltip, setShowInfoTooltip] = useState(false);
@@ -31,9 +27,7 @@ const GroundwaterSustainability: React.FC<GroundwaterSustainabilityProps> = ({ a
     setSelectedFile(null);
     setUploadSuccess(false);
     setDemandSelectionType('');
-    setDemandSelectedWell('');
-    setDemandSelectedFile(null);
-    setDemandUploadSuccess(false);
+  
   }, [activeTab]);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -42,13 +36,7 @@ const GroundwaterSustainability: React.FC<GroundwaterSustainabilityProps> = ({ a
       setUploadSuccess(false);
     }
   };
-  
-  const handleDemandFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.files && event.target.files.length > 0) {
-      setDemandSelectedFile(event.target.files[0]);
-      setDemandUploadSuccess(false);
-    }
-  };
+
   
   const handleUpload = () => {
     if (selectionType === 'browse' && selectedFile) {
@@ -61,15 +49,6 @@ const GroundwaterSustainability: React.FC<GroundwaterSustainabilityProps> = ({ a
         setUploadSuccess(true);
       }, 1500);
     }
-  };
-  
-  const handleDemandUpload = async () => {
-    setDemandIsUploading(true);
-    // Simulate a delay for validation
-    setTimeout(() => {
-      setDemandIsUploading(false);
-      setDemandUploadSuccess(true);
-    }, 1500);
   };
   
   const handlePlot = () => {
@@ -94,7 +73,7 @@ const GroundwaterSustainability: React.FC<GroundwaterSustainabilityProps> = ({ a
   // Groundwater Recharge
   const renderGroundwaterRecharge = () => (
     <div>
-      <h3 className="font-medium text-blue-600 mb-4">Groundwater Recharge</h3>
+      <h3 className="font-medium text-blue-600 mb-4">Groundwater Sustainability Recharge</h3>
       
       <div className="mb-4">
         <label className="block text-sm font-medium text-gray-700 mb-1">Data Source</label>
@@ -333,152 +312,6 @@ const GroundwaterSustainability: React.FC<GroundwaterSustainabilityProps> = ({ a
       <h3 className="font-medium text-blue-600 mb-4">Groundwater Demand</h3>
   
       <div className="mb-4">
-        <label className="block text-sm font-medium text-gray-700 mb-1">Data Source</label>
-        <select
-          className="w-full p-2 border rounded-md text-sm mb-3"
-          value={demandSelectionType}
-          onChange={(e) => {
-            setDemandSelectionType(e.target.value);
-            setDemandSelectedWell('');
-            setDemandSelectedFile(null);
-            setDemandUploadSuccess(false);
-          }}
-        >
-          <option value="">Select an option...</option>
-          <option value="current">Select Existing Data</option>
-          <option value="browse">Add New Data</option>
-        </select>
-  
-        {demandSelectionType === 'current' && (
-          <div className="mt-2">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Existing Data</label>
-            <select
-              className="w-full p-2 border rounded-md text-sm"
-              value={demandSelectedWell}
-              onChange={(e) => setDemandSelectedWell(e.target.value)}
-            >
-              <option value="">Select dataset...</option>
-              <option value="demand-1">Agricultural Demand Data</option>
-              <option value="demand-2">Domestic Use Assessment</option>
-              <option value="demand-3">Industrial Water Usage</option>
-              <option value="demand-4">Combined Demand Analysis</option>
-            </select>
-  
-            {demandSelectedWell && (
-              <div className="flex gap-2 mt-3">
-                <button className="flex-1 bg-blue-500 text-white text-sm py-1 px-3 rounded-md flex items-center justify-center">
-                  <span>Display on Map</span>
-                </button>
-                <button
-                  className="flex-1 bg-blue-500 text-white text-sm py-1 px-3 rounded-md flex items-center justify-center"
-                  onClick={() => console.log('Plot Time Series')}
-                >
-                  <span>Plot Time Series</span>
-                </button>
-              </div>
-            )}
-          </div>
-        )}
-  
-        {demandSelectionType === 'browse' && (
-          <div className="mt-2">
-            <div className="border-2 border-dashed border-gray-300 rounded-md p-4 mb-3">
-              <div className="flex flex-col items-center justify-center">
-                <p className="text-sm text-gray-500 mb-2">
-                  {demandSelectedFile ? demandSelectedFile.name : 'Upload shapefile of assessment units'}
-                </p>
-  
-                <label className="bg-blue-50 text-blue-600 text-sm py-1 px-3 rounded-md cursor-pointer hover:bg-blue-100">
-                  Browse Files
-                  <input
-                    type="file"
-                    className="hidden"
-                    accept=".shp,.shx,.dbf"
-                    onChange={handleDemandFileChange}
-                  />
-                </label>
-  
-                <p className="text-xs text-gray-400 mt-1">Supports: Shapefile (.shp, .shx, .dbf)</p>
-              </div>
-            </div>
-  
-            <div className="border-2 border-dashed border-gray-300 rounded-md p-4">
-              <div className="flex flex-col items-center justify-center">
-                <p className="text-sm text-gray-500 mb-2">Upload CSV with demand time series data</p>
-  
-                <label className="bg-blue-50 text-blue-600 text-sm py-1 px-3 rounded-md cursor-pointer hover:bg-blue-100">
-                  Browse Files
-                  <input
-                    type="file"
-                    className="hidden"
-                    accept=".csv"
-                    onChange={handleDemandFileChange}
-                  />
-                </label>
-              </div>
-            </div>
-  
-            {demandSelectedFile && (
-              <div className="mt-3">
-                <div className="flex gap-2">
-                  <button
-                    className={`flex-1 text-white text-sm py-1 px-3 rounded-md flex items-center justify-center ${
-                      demandIsUploading ? 'bg-blue-400' : 'bg-blue-500 hover:bg-blue-600'
-                    }`}
-                    onClick={handleDemandUpload}
-                    disabled={demandIsUploading}
-                  >
-                    {demandIsUploading ? (
-                      <>
-                        <svg
-                          className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
-                          xmlns="http://www.w3.org/2000/svg"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                        >
-                          <circle
-                            className="opacity-25"
-                            cx="12"
-                            cy="12"
-                            r="10"
-                            stroke="currentColor"
-                            strokeWidth="4"
-                          ></circle>
-                          <path
-                            className="opacity-75"
-                            fill="currentColor"
-                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                          ></path>
-                        </svg>
-                        Validating...
-                      </>
-                    ) : (
-                      <>
-                        <span>Validate & Upload</span>
-                        {demandUploadSuccess && (
-                          <span className="ml-1 bg-white text-blue-500 rounded-full w-4 h-4 flex items-center justify-center text-xs">
-                            ✓
-                          </span>
-                        )}
-                      </>
-                    )}
-                  </button>
-                </div>
-  
-                {demandUploadSuccess && (
-                  <p className="text-xs text-green-600 mt-1 text-center">
-                    Files successfully validated and uploaded!
-                  </p>
-                )}
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-  
-      <div className="mb-4">
-        <h4 className="font-medium text-blue-600 mb-2">Demand Analysis Options</h4>
-  
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-1">Demand Category</label>
           <select className="w-full p-2 border rounded-md text-sm">
@@ -505,17 +338,19 @@ const GroundwaterSustainability: React.FC<GroundwaterSustainabilityProps> = ({ a
       <button className="w-full bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-md">
         Analyze Demand
       </button>
+      <div className="mt-4">
+      <button className="w-full bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-md">
+        Compute GSR
+      </button>
+      </div>
     </div>
+    
   );
 
   return (
     <div className="h-full overflow-auto flex flex-col">
-      <h3 className="font-medium text-blue-600 mb-4">Groundwater Sustainability</h3>
-      
       {renderGroundwaterRecharge()}
       {renderGroundwaterDemand()}
-
-      
     </div>
   );
 };
