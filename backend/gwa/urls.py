@@ -1,14 +1,10 @@
-# This is an example of how your urls.py might look
 from django.urls import path
-from . import views
+from .views import WellGeoJSONAPIView
 
 urlpatterns = [
-    # Keep any existing URL patterns you have
-    # ...
-    
-    # Add the new endpoint that matches what we're using in the frontend
-   path('get-well-geojson/', views.get_well_geojson, name='get-well-geojson'),
-    
-    # # Keep your original endpoint
+    # Class-based view for well GeoJSON
+    path('get-well-geojson/', WellGeoJSONAPIView.as_view(), name='get-well-geojson'),
+
+    # Uncomment and keep any original endpoints you still need
     # path('get-well-points/', views.get_well_points, name='get-well-points'),
 ]

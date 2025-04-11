@@ -32,6 +32,7 @@ INSTALLED_APPS = [
     "Basic",
     "raster_visual",
     "gwa",
+    'corsheaders',
 ]
 
 MIDDLEWARE = [
@@ -127,6 +128,7 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://172.168.32.60:3000",  # Your React app's address
 ]
+
 
 # Optional: Allow credentials (cookies, etc.) if needed
 CORS_ALLOW_CREDENTIALS = True
