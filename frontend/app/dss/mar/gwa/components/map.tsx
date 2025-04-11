@@ -91,72 +91,57 @@ const LeafletMapPreview: React.FC<MapPreviewProps> = ({
 
   // Add a new effect to handle GeoJSON data changes
   useEffect(() => {
-    if (!mapInstanceRef.current || !geoJsonData) return;
-    
-    // Remove existing GeoJSON layer if it exists
-    if (geoJsonLayerRef.current) {
-      mapInstanceRef.current.removeLayer(geoJsonLayerRef.current);
-      geoJsonLayerRef.current = null;
-    }
-    
-    // Create and add new GeoJSON layer
-    try {
-      const geoJsonLayer = window.L.geoJSON(geoJsonData, {
-        pointToLayer: (feature, latlng) => {
-          return window.L.circleMarker(latlng, {
-            radius: 8,
-            fillColor: "#ff7800",
-            color: "#000",
-            weight: 1,
-            opacity: 1,
-            fillOpacity: 0.8
-          });
-        },
-        onEachFeature: (feature, layer) => {
-          // Add popups for each feature if properties exist
-          if (feature.properties) {
-            let popupContent = '<div class="feature-popup">';
-            
-            // Loop through all properties
-            for (const key in feature.properties) {
-              if (Object.prototype.hasOwnProperty.call(feature.properties, key)) {
-                popupContent += `<strong>${key}:</strong> ${feature.properties[key]}<br>`;
-              }
+  if (!geoJsonData || !mapInstanceRef.current) return;
+
+  try {
+    const geoJsonLayer = window.L.geoJSON(geoJsonData, {
+      pointToLayer: (feature, latlng) =>
+        window.L.circleMarker(latlng, {
+          radius: 8,
+          fillColor: "#ff7800",
+          color: "#000",
+          weight: 1,
+          opacity: 1,
+          fillOpacity: 0.8
+        }),
+      onEachFeature: (feature, layer) => {
+        if (feature.properties) {
+          let popupContent = '<div class="feature-popup">';
+          for (const key in feature.properties) {
+            if (Object.prototype.hasOwnProperty.call(feature.properties, key)) {
+              popupContent += `<strong>${key}:</strong> ${feature.properties[key]}<br>`;
             }
-            
-            popupContent += '</div>';
-            layer.bindPopup(popupContent);
           }
+          popupContent += '</div>';
+          layer.bindPopup(popupContent);
         }
-      });
-      
-      // Add the layer to the map
-      geoJsonLayer.addTo(mapInstanceRef.current);
-      geoJsonLayerRef.current = geoJsonLayer;
-      
-      // Zoom to the GeoJSON bounds
-      const bounds = geoJsonLayer.getBounds();
-      if (bounds.isValid()) {
-        mapInstanceRef.current.fitBounds(bounds, {
-          padding: [50, 50],
-          maxZoom: 15
-        });
       }
-      
-      showNotification(
-        "Data Loaded",
-        "GeoJSON data has been plotted on the map",
-        "success"
-      );
-    } catch (error) {
-      console.error("Error adding GeoJSON to map:", error);
-      showNotification(
-        "Error",
-        "Failed to render GeoJSON data on map",
-        "error"
-      );
+    });
+
+    // Clear previous GeoJSON layer if needed
+    if (geoJsonLayerRef.current) {
+      geoJsonLayerRef.current.remove();
     }
-  }, [geoJsonData, showNotification]);
+
+    geoJsonLayer.addTo(mapInstanceRef.current);
+    geoJsonLayerRef.current = geoJsonLayer;
+
+    const bounds = geoJsonLayer.getBounds();
+    if (bounds.isValid()) {
+      mapInstanceRef.current.fitBounds(bounds, {
+        padding: [50, 50],
+        maxZoom: 15
+      });
+    }
+
+    showNotification("Data Loaded", "GeoJSON data has been plotted on the map", "success");
+
+  } catch (error) {
+    console.error("Error adding GeoJSON to map:", error);
+    showNotification("Error", "Failed to render GeoJSON data on map", "error");
+  }
+}, [geoJsonData, showNotification]);
+
 
   const initializeMap = () => {
     if (!mapContainerRef.current || !window.L || mapInstanceRef.current) return;

@@ -67,7 +67,6 @@ const Dashboard: React.FC = () => {
       }
     }
   };
-
   // Function to show notifications
   const showNotification = (title: string, message: string, type: string = 'info') => {
     console.log(`${title}: ${message} (${type})`);

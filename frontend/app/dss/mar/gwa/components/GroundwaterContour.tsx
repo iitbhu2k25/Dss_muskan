@@ -67,7 +67,7 @@ const GroundwaterContour: React.FC<GroundwaterContourProps> = ({
     
     try {
       // Update the URL to include the /api/gwa/ prefix based on your project-level URLs
-      const response = await fetch(`http://localhost:9000/api/gwa/get-well-geojson/?id=${wellGroupId}`);
+      const response = await fetch(`http://localhost:9000/api/gwa/get-well-geojson/`);
       
       if (!response.ok) throw new Error('Failed to fetch GeoJSON');
       const data = await response.json();
