@@ -24,14 +24,29 @@ const Dashboard: React.FC = () => {
     { id: 'time-series-analysis', label: 'Time Series Analysis and Forecasting' },
     { id: 'groundwater-recharge', label: 'Groundwater Sustainability Recharge' }
   ];
-
+ 
   // Initialize state
   const [activeTab, setActiveTab] = useState<TabType>('data-selection');
   const [completedSteps, setCompletedSteps] = useState<TabType[]>([]);
   const [geoJsonData, setGeoJsonData] = useState<any>(null);
+  
+  // Track initial data for each tab to enable reset functionality
+  const [tabInitialStates, setTabInitialStates] = useState<Record<TabType, any>>({
+    'data-selection': null,
+    'groundwater-contour': null,
+    'groundwater-trend': null,
+    'time-series-analysis': null,
+    'groundwater-recharge': null
+  });
 
   // Function to check if a tab can be accessed
   const canAccessTab = (tabId: TabType) => {
+    // First tab is always accessible
+    if (tabId === 'data-selection') return true;
+    
+    // After first tab is completed, all tabs become accessible
+    if (completedSteps.includes('data-selection')) return true;
+    
     const tabIndex = tabs.findIndex(tab => tab.id === tabId);
     const activeIndex = tabs.findIndex(tab => tab.id === activeTab);
     
@@ -66,28 +81,85 @@ const Dashboard: React.FC = () => {
         return <DataSelection 
                  activeTab={activeTab} 
                  onGeoJsonData={setGeoJsonData} // Pass the callback
+                 initialData={tabInitialStates['data-selection']}
                />;
       case 'groundwater-contour':
         return <GroundwaterContour 
-                 activeTab={activeTab} />;
+                 activeTab={activeTab}
+                 initialData={tabInitialStates['groundwater-contour']} />;
       case 'groundwater-trend':
-        return <GroundwaterTrend activeTab={activeTab} />;
+        return <GroundwaterTrend 
+                 activeTab={activeTab}
+                 initialData={tabInitialStates['groundwater-trend']} />;
       case 'time-series-analysis':
-        return <TimeSeriesAnalysis activeTab={activeTab} />;
+        return <TimeSeriesAnalysis 
+                 activeTab={activeTab}
+                 initialData={tabInitialStates['time-series-analysis']} />;
       case 'groundwater-recharge':
-        return <GroundwaterSustainability activeTab={activeTab} />;
+        return <GroundwaterSustainability 
+                 activeTab={activeTab}
+                 initialData={tabInitialStates['groundwater-recharge']} />;
       default:
         return <DataSelection 
                  activeTab={activeTab} 
                  onGeoJsonData={setGeoJsonData} // Pass the callback
+                 initialData={tabInitialStates['data-selection']}
                />;
     }
   };
 
-  // Reset progress (simulating page refresh)
-  const resetProgress = () => {
+  // Reset all progress (simulating page refresh)
+  const resetAllProgress = () => {
     setActiveTab('data-selection');
     setCompletedSteps([]);
+    setGeoJsonData(null);
+    // Reset all tab initial states
+    setTabInitialStates({
+      'data-selection': null,
+      'groundwater-contour': null,
+      'groundwater-trend': null,
+      'time-series-analysis': null,
+      'groundwater-recharge': null
+    });
+  };
+
+  // Reset only the current tab
+  const resetCurrentTab = () => {
+    // Update the initial state for the current tab
+    setTabInitialStates({
+      ...tabInitialStates,
+      [activeTab]: null
+    });
+    
+    // If this tab was marked as completed, remove it
+    if (completedSteps.includes(activeTab)) {
+      setCompletedSteps(completedSteps.filter(tab => tab !== activeTab));
+    }
+    
+    // Show a notification
+    showNotification('Reset', `${tabs.find(tab => tab.id === activeTab)?.label} has been reset`, 'info');
+  };
+
+  // Go to previous step
+  const goToPreviousStep = () => {
+    const currentIndex = tabs.findIndex(tab => tab.id === activeTab);
+    if (currentIndex > 0) {
+      setActiveTab(tabs[currentIndex - 1].id);
+    }
+  };
+
+  // Go to next step
+  const goToNextStep = () => {
+    // Add current tab to completed steps if not already included
+    if (!completedSteps.includes(activeTab)) {
+      setCompletedSteps([...completedSteps, activeTab]);
+    }
+                      
+    // Move to the next tab if not on the last tab
+    const currentIndex = tabs.findIndex(tab => tab.id === activeTab);
+    if (currentIndex < tabs.length - 1) {
+      setActiveTab(tabs[currentIndex + 1].id);
+    }
   };
 
   return (
@@ -111,12 +183,16 @@ const Dashboard: React.FC = () => {
                   ? "text-blue-700"
                   : isCompleted
                   ? "text-green-600"
+                  : isAccessible
+                  ? "text-gray-700"
                   : "text-gray-500";
 
                 const circleColor = isActive
                   ? "bg-blue-600 border-blue-600 text-white"
                   : isCompleted
                   ? "bg-green-600 border-green-600 text-white"
+                  : isAccessible
+                  ? "bg-white border-blue-300 text-gray-600 hover:border-blue-500"
                   : "bg-white border-gray-300 text-gray-600";
 
                 const rightLineColor =
@@ -220,39 +296,45 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
       </div>
-      <div className="w-full flex justify-end mt-8">
-     <div className="flex gap-3 mt-1">
-     <button 
-        onClick={() => {
-        // Add current tab to completed steps if not already included
-            if (!completedSteps.includes(activeTab)) {
-              setCompletedSteps([...completedSteps, activeTab]);
-              }
-                          
-        // Move to the next tab if not on the last tab
-         const currentIndex = tabs.findIndex(tab => tab.id === activeTab);
-            if (currentIndex < tabs.length - 1) {
-               setActiveTab(tabs[currentIndex + 1].id);
-              }
-               }} 
+      <div className="w-full flex justify-between mt-8">
+  
+        {/* Reset Current Tab Button */}
+        <div className="flex-1 text-center">
+          <button 
+            onClick={resetCurrentTab}
+            className="px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600"
+          >
+            Reset Current Process
+          </button>
+        </div>
+        
+        {/* Right aligned buttons */}
+        <div className="flex-1 flex justify-end gap-3">
+        <button 
+            onClick={goToPreviousStep} 
+            disabled={activeTab === 'data-selection'} 
+            className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Previous Step
+          </button>
+          <button 
+            onClick={goToNextStep} 
             disabled={activeTab === tabs[tabs.length - 1].id && completedSteps.includes(activeTab)} 
             className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-              {activeTab === tabs[tabs.length - 1].id 
+          >
+            {activeTab === tabs[tabs.length - 1].id 
               ? (completedSteps.includes(activeTab) ? "Completed" : "Complete") 
               : "Next Step"}
-      </button>
-      <button 
-        onClick={resetProgress} 
-        className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300"
-        >
-        Reset (Whole Page Refresh)
-      </button>
-    </div> 
+          </button>
+          <button 
+            onClick={resetAllProgress} 
+            className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+          >
+            Reset All Progress
+          </button>
+        </div> 
+      </div>
     </div>
-    </div>
-    
-    
   );
 };
 
