@@ -123,21 +123,21 @@ const Dashboard: React.FC = () => {
   };
 
   // Reset only the current tab
-  const resetCurrentTab = () => {
-    // Update the initial state for the current tab
-    setTabInitialStates({
-      ...tabInitialStates,
-      [activeTab]: null
-    });
+  // const resetCurrentTab = () => {
+  //   // Update the initial state for the current tab
+  //   setTabInitialStates({
+  //     ...tabInitialStates,
+  //     [activeTab]: null
+  //   });
     
-    // If this tab was marked as completed, remove it
-    if (completedSteps.includes(activeTab)) {
-      setCompletedSteps(completedSteps.filter(tab => tab !== activeTab));
-    }
+  //   // If this tab was marked as completed, remove it
+  //   if (completedSteps.includes(activeTab)) {
+  //     setCompletedSteps(completedSteps.filter(tab => tab !== activeTab));
+  //   }
     
-    // Show a notification
-    showNotification('Reset', `${tabs.find(tab => tab.id === activeTab)?.label} has been reset`, 'info');
-  };
+  //   // Show a notification
+  //   showNotification('Reset', `${tabs.find(tab => tab.id === activeTab)?.label} has been reset`, 'info');
+  // };
 
   // Go to previous step
   const goToPreviousStep = () => {
@@ -308,14 +308,14 @@ const Dashboard: React.FC = () => {
       <div className="w-full flex justify-between mt-8">
   
         {/* Reset Current Tab Button */}
-        <div className="flex-1 text-center">
+        {/* <div className="flex-1 text-center">
           <button 
             onClick={resetCurrentTab}
             className="px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600"
           >
             Reset Current Process
           </button>
-        </div>
+        </div> */}
         
         {/* Right aligned buttons */}
         <div className="flex-1 flex justify-end gap-3">
