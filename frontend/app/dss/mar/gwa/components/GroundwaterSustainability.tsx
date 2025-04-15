@@ -323,7 +323,14 @@ const GroundwaterSustainability: React.FC<GroundwaterSustainabilityProps> = ({ a
           </select>
         </div>
   
-        <div className="mb-4">
+       
+      </div>
+  
+      <button className="w-full bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-md">
+        Analyze Demand
+      </button>
+      <div className="mt-4">
+      <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-1">Select Year</label>
           <select className="w-full p-2 border rounded-md text-sm">
             <option value="">Select Year</option>
@@ -333,12 +340,6 @@ const GroundwaterSustainability: React.FC<GroundwaterSustainabilityProps> = ({ a
             <option value="2014">2014</option>
           </select>
         </div>
-      </div>
-  
-      <button className="w-full bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-md">
-        Analyze Demand
-      </button>
-      <div className="mt-4">
       <button className="w-full bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-md">
         Compute GSR
       </button>

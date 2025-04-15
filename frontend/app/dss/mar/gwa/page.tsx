@@ -169,102 +169,112 @@ const Dashboard: React.FC = () => {
           {/* Process Step Tabs */}
           <div className="border-b relative">
             {/* Main Horizontal Line */}
-            <div className="absolute top-10 left-0 right-0 h-0.5 bg-gray-200 z-0"></div>
+            {/* <div className="absolute top-10 left-0 right-0 h-0.5 bg-gray-200 z-0"></div> */}
 
             {/* Progress Indicators */}
             <div className="flex w-full justify-between items-start px-4 py-6 overflow-x-auto">
-              {tabs.map((tab, index) => {
-                const isAccessible = canAccessTab(tab.id);
-                const isActive = activeTab === tab.id;
-                const isCompleted = completedSteps.includes(tab.id) && !isActive;
+  {tabs.map((tab, index) => {
+    const isAccessible = canAccessTab(tab.id);
+    const isActive = activeTab === tab.id;
+    const isCompleted = completedSteps.includes(tab.id) && !isActive;
 
-                const textColor = isActive
-                  ? "text-blue-700"
-                  : isCompleted
-                  ? "text-green-600"
-                  : isAccessible
-                  ? "text-gray-700"
-                  : "text-gray-500";
+    const textColor = isActive
+      ? "text-blue-700"
+      : isCompleted
+      ? "text-green-600"
+      : isAccessible
+      ? "text-gray-700"
+      : "text-gray-500";
 
-                const circleColor = isActive
-                  ? "bg-blue-600 border-blue-600 text-white"
-                  : isCompleted
-                  ? "bg-green-600 border-green-600 text-white"
-                  : isAccessible
-                  ? "bg-white border-blue-300 text-gray-600 hover:border-blue-500"
-                  : "bg-white border-gray-300 text-gray-600";
+    const circleColor = isActive
+      ? "bg-blue-600 border-blue-600 text-white"
+      : isCompleted
+      ? "bg-green-600 border-green-600 text-white"
+      : isAccessible
+      ? "bg-white border-blue-300 text-gray-600 hover:border-blue-500"
+      : "bg-white border-gray-300 text-gray-600";
 
-                const rightLineColor =
-                  index < tabs.length - 1 &&
-                  (isCompleted || (isActive && completedSteps.includes(tabs[index + 1].id)))
-                    ? "bg-green-600"
-                    : "bg-gray-200";
+    const rightLineColor =
+      index < tabs.length - 1 &&
+      (isCompleted || (isActive && completedSteps.includes(tabs[index + 1].id)))
+        ? "bg-green-600"
+        : "bg-gray-200";
 
-                const leftLineColor =
-                  index > 0 &&
-                  (isCompleted || (isActive && completedSteps.includes(tabs[index - 1].id)))
-                    ? "bg-green-600"
-                    : "bg-gray-200";
+    const leftLineColor =
+      index > 0 &&
+      (isCompleted || (isActive && completedSteps.includes(tabs[index - 1].id)))
+        ? "bg-green-600"
+        : "bg-gray-200";
 
-                return (
-                  <div
-                    key={tab.id}
-                    className="flex flex-col items-center text-center relative z-10 flex-1 min-w-[80px]"
-                  >
-                    {/* Left Line */}
-                    {index > 0 && (
-                      <div
-                        className={`absolute h-0.5 ${leftLineColor} top-10 right-1/2 w-1/2`}
-                      ></div>
-                    )}
+    return (
+      <div
+        key={tab.id}
+        className="flex flex-col items-center text-center relative z-10 flex-1 min-w-[80px]"
+      >
+        {/* Left Line - connects to previous circle */}
+        {index > 0 && (
+          <div
+            className={`absolute h-0.5 ${leftLineColor} z-0`}
+            style={{
+              top: "20px",
+              right: "50%", 
+              width: "50%"
+            }}
+          ></div>
+        )}
+        
+        {/* Right Line - connects to next circle */}
+        {index < tabs.length - 1 && (
+          <div
+            className={`absolute h-0.5 ${rightLineColor} z-0`}
+            style={{
+              top: "20px",
+              left: "50%",
+              width: "50%"
+            }}
+          ></div>
+        )}
 
-                    {/* Right Line */}
-                    {index < tabs.length - 1 && (
-                      <div
-                        className={`absolute h-0.5 ${rightLineColor} top-10 left-1/2 w-1/2`}
-                      ></div>
-                    )}
+        {/* Step Circle */}
+        <button
+          className={`relative w-10 h-10 rounded-full border-2 flex items-center justify-center mb-2 transition-all duration-200 z-10 ${
+            circleColor
+          } ${
+            !isAccessible
+              ? "opacity-50 cursor-not-allowed"
+              : "hover:scale-105 shadow-sm"
+          }`}
+          onClick={() => isAccessible && handleTabChange(tab.id)}
+          disabled={!isAccessible}
+          title={tab.label}
+        >
+          {isCompleted ? (
+            <svg
+              className="w-5 h-5"
+              fill="currentColor"
+              viewBox="0 0 20 20"
+            >
+              <path
+                fillRule="evenodd"
+                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                clipRule="evenodd"
+              />
+            </svg>
+          ) : (
+            <span className="font-semibold">{index + 1}</span>
+          )}
+        </button>
 
-                    {/* Step Circle */}
-                    <button
-                      className={`w-10 h-10 rounded-full border-2 flex items-center justify-center mb-2 transition-all duration-200 ${
-                        circleColor
-                      } ${
-                        !isAccessible
-                          ? "opacity-50 cursor-not-allowed"
-                          : "hover:scale-105 shadow-sm"
-                      }`}
-                      onClick={() => isAccessible && handleTabChange(tab.id)}
-                      disabled={!isAccessible}
-                      title={tab.label}
-                    >
-                      {isCompleted ? (
-                        <svg
-                          className="w-5 h-5"
-                          fill="currentColor"
-                          viewBox="0 0 20 20"
-                        >
-                          <path
-                            fillRule="evenodd"
-                            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                            clipRule="evenodd"
-                          />
-                        </svg>
-                      ) : (
-                        <span className="font-semibold">{index + 1}</span>
-                      )}
-                    </button>
-
-                    {/* Label */}
-                    <span
-                      className={`text-xs sm:text-sm font-medium ${textColor} px-1`}
-                    >
-                      {tab.label}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
+        {/* Label */}
+        <span
+          className={`text-xs sm:text-sm font-medium ${textColor} px-1`}
+        >
+          {tab.label}
+        </span>
+      </div>
+    );
+  })}
+</div>
           </div>
 
           {/* Tab Content */}

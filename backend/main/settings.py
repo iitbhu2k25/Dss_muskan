@@ -122,7 +122,7 @@ STATIC_URL = "static/"
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
-CORS_ALLOW_ALL_ORIGINS = False  # Don't use in production, only for development
+CORS_ALLOW_ALL_ORIGINS = True  # Don't use in production, only for development
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://172.168.32.60:3000",  # Your React app's address
@@ -130,7 +130,7 @@ CORS_ALLOWED_ORIGINS = [
 
 
 # Optional: Allow credentials (cookies, etc.) if needed
-CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_CREDENTIALS = False
 
 
 

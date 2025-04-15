@@ -15,7 +15,7 @@ const TimeSeriesAnalysis: React.FC<TimeSeriesAnalysisProps> = ({ activeTab }) =>
   // State for forecasting methods
   const [forecastingMethods, setForecastingMethods] = useState({
     linearRegression: false,
-    decisionTree: false,
+    machineLearning: false,
     lstm: false
   });
   
@@ -282,13 +282,13 @@ const TimeSeriesAnalysis: React.FC<TimeSeriesAnalysisProps> = ({ activeTab }) =>
             <input
               type="checkbox"
               className="mr-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-              checked={forecastingMethods.decisionTree}
-              onChange={() => handleForecastingMethodChange('decisionTree')}
+              checked={forecastingMethods.machineLearning}
+              onChange={() => handleForecastingMethodChange('machineLearning')}
             />
-            Decision Tree
+            Machine Learning
           </label>
           
-          <label className="flex items-center text-sm">
+          {/* <label className="flex items-center text-sm">
             <input
               type="checkbox"
               className="mr-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
@@ -296,7 +296,7 @@ const TimeSeriesAnalysis: React.FC<TimeSeriesAnalysisProps> = ({ activeTab }) =>
               onChange={() => handleForecastingMethodChange('lstm')}
             />
             LSTM
-          </label>
+          </label> */}
         </div>
       </div>
       
@@ -356,10 +356,10 @@ const TimeSeriesAnalysis: React.FC<TimeSeriesAnalysisProps> = ({ activeTab }) =>
           </div>
         )} */}
 
-        {/* Decision Tree */}
-        {/* {forecastingMethods.decisionTree && (
+        {/* Machine Learning */}
+        {/* {forecastingMethods.machineLearning && (
           <div className="min-w-[320px] max-w-[320px] h-[500px] overflow-y-auto p-3 border border-green-200 rounded-md bg-green-50">
-            <h4 className="font-medium text-green-700 mb-2">Decision Tree Settings</h4>
+            <h4 className="font-medium text-green-700 mb-2">Machine Learning Settings</h4>
 
             <div className="mb-3">
               <label className="block text-sm font-medium text-gray-700 mb-1">Tree Depth</label>
@@ -427,7 +427,7 @@ const TimeSeriesAnalysis: React.FC<TimeSeriesAnalysisProps> = ({ activeTab }) =>
             </div>
 
             <button className="w-full bg-green-600 hover:bg-green-700 text-white text-sm py-1 px-4 rounded-md">
-              Run Decision Tree
+              Run Machine Learning
             </button>
           </div>
         )} */}
@@ -516,7 +516,7 @@ const TimeSeriesAnalysis: React.FC<TimeSeriesAnalysisProps> = ({ activeTab }) =>
         )} */}
       </div>
       
-      {(forecastingMethods.linearRegression || forecastingMethods.decisionTree || forecastingMethods.lstm) && (
+      {(forecastingMethods.linearRegression || forecastingMethods.machineLearning ) && (
         <button className="w-full bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-md mt-2">
           Compare Selected Methods
         </button>

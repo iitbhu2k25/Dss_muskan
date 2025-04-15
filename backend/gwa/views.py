@@ -4,6 +4,7 @@ from rest_framework import status
 import geopandas as gpd
 import os
 from django.conf import settings
+import json
 
 class WellGeoJSONAPIView(APIView):
     def get(self, request, format=None):
@@ -42,12 +43,30 @@ class WellGeoJSONAPIView(APIView):
                     status=status.HTTP_404_NOT_FOUND
                 )
             
+            # Check for invalid geometries
+            if not gdf.geometry.is_valid.all():
+                print("Invalid geometries found, attempting to fix...")
+                gdf.geometry = gdf.geometry.buffer(0)  # Attempt to fix invalid geometries
+            
+            # Ensure CRS is EPSG:4326 (standard for GeoJSON)
             if gdf.crs and gdf.crs != "EPSG:4326":
                 gdf = gdf.to_crs("EPSG:4326")
             
+            # Convert to GeoJSON
             geojson = gdf.to_json()
             
-            return Response(geojson, status=status.HTTP_200_OK)
+            # Parse and validate GeoJSON to catch issues
+            try:
+                parsed_geojson = json.loads(geojson)
+                if parsed_geojson.get("type") != "FeatureCollection":
+                    raise ValueError("Generated GeoJSON is not a FeatureCollection")
+            except json.JSONDecodeError as e:
+                return Response(
+                    {'error': 'Failed to generate valid GeoJSON', 'detail': str(e)},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
+            
+            return Response(parsed_geojson, status=status.HTTP_200_OK)
             
         except Exception as e:
             import traceback

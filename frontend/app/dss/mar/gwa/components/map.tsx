@@ -1,5 +1,7 @@
 'use client';
 import React, { useEffect, useRef, useState } from 'react';
+import { MapContainer, TileLayer, GeoJSON } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
 
 interface MapPreviewProps {
   activeTab: string;
@@ -90,6 +92,12 @@ const LeafletMapPreview: React.FC<MapPreviewProps> = ({
   }, []);
 
   // Add a new effect to handle GeoJSON data changes
+
+  useEffect(() => {
+    if (!geoJsonData || !mapInstanceRef.current) return;
+    // ... code that renders the GeoJSON on the map
+  }, [geoJsonData, showNotification]);
+  
   useEffect(() => {
   if (!geoJsonData || !mapInstanceRef.current) return;
 
