@@ -358,7 +358,7 @@ const Navbar = (): JSX.Element => {
                       </Link>
                     </li>
                     <li>
-                      <Link href="/stp" className="block px-4 py-2 text-blue-600 font-semibold hover:bg-blue-50 hover:bg-opacity-10 rounded-md transition duration-200">
+                      <Link href="/dss/riverwatermangement/wastewatertreatment/stp" className="block px-4 py-2 text-blue-600 font-semibold hover:bg-blue-50 hover:bg-opacity-10 rounded-md transition duration-200">
                         Site Priority and Suitability
                       </Link>
                     </li>
