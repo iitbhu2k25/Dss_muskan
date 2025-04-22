@@ -1,9 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 
-
 interface GroundwaterContourProps {
   activeTab: string;
-  onGeoJsonData?: (data: any) => void;
+  onGeoJsonData?: (data: any) => void; // This callback passes contour data to parent/map
 }
 
 const GroundwaterContour: React.FC<GroundwaterContourProps> = ({ 
@@ -99,7 +98,8 @@ const GroundwaterContour: React.FC<GroundwaterContourProps> = ({
       
       setGeoJsonData(data);
       
-      // Pass to parent component for map layer rendering
+      // IMPORTANT: Pass the contour data to parent component (Dashboard)
+      // This will be used to update contourData in Dashboard which is passed to MapPreview
       onGeoJsonData(data);
     } catch (error) {
       console.error('Error generating contour:', error);
@@ -112,7 +112,7 @@ const GroundwaterContour: React.FC<GroundwaterContourProps> = ({
 
   // Clear the data when tab changes
   useEffect(() => {
-    if (activeTab !== 'groundwater') {
+    if (activeTab !== 'groundwater-contour') {
       setGeoJsonData(null);
       // Optionally reset form values
       // setInterpolationMethod('');
