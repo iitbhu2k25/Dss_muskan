@@ -63,8 +63,8 @@ const Navbar = (): JSX.Element => {
   return (
     <nav 
       ref={navRef}
-      className={`${isSticky ? 'bg-orange-300 shadow-md fixed top-0 left-0 w-full z-50' : 'bg-opacity-10 bg-[#081F5C]'} 
-        border-b border-white border-opacity-20 py-4 relative transition-all duration-300 z-40`}
+      className={`${isSticky ? 'bg-orange-300 shadow-md fixed top-0 left-0 w-full z-1000' : 'bg-opacity-10 bg-[#081F5C]'} 
+        border-b border-white border-opacity-20 py-4 relative transition-all duration-300 z-1000`}
     >
       <div className="container mx-auto px-4">
         {/* Mobile menu button */}
