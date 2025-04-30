@@ -2,384 +2,449 @@
 
 import React, { useState } from 'react';
 
-// Mock data types
-interface Dataset {
+export interface Dataset {
   id: string;
   name: string;
+  type: string; // 'constraints' or 'conditions'
   description: string;
-  type: 'constraints' | 'conditions';
-  createdAt: string;
+  isUserUploaded?: boolean;
 }
 
-// Mock datasets for demonstration
-const mockDatasets: Dataset[] = [
-  {
-    id: '1',
-    name: 'Soil Conditions',
-    description: 'Soil quality and composition data for the target area',
-    type: 'conditions',
-    createdAt: '2023-05-15'
-  },
-  {
-    id: '2',
-    name: 'Watershed Boundaries',
-    description: 'Defined boundaries of local watersheds',
-    type: 'constraints',
-    createdAt: '2023-06-22'
-  },
-  {
-    id: '3',
-    name: 'Water Quality Measurements',
-    description: 'pH, dissolved oxygen, and other water quality metrics',
-    type: 'conditions',
-    createdAt: '2023-07-10'
-  },
-  {
-    id: '4',
-    name: 'Protected Areas',
-    description: 'Environmentally protected regions and conservation zones',
-    type: 'constraints',
-    createdAt: '2023-08-05'
-  },
-];
-
-// Constraint and conditioning factors based on the image
-const constraintFactors = [
-  { id: 'water-body', label: 'Water Body' },
-  { id: 'flood-prone-area', label: 'Flood Prone Area' },
-  { id: 'forest', label: 'Forest' },
-  { id: 'road', label: 'Road' },
-  { id: 'slope-constraint', label: 'Slope' },
-  { id: 'ground-water-depth', label: 'Ground Water Depth' },
-  { id: 'adi-sites', label: 'ADI Sites' },
-  { id: 'airport', label: 'Airport' },
-  { id: 'soil-texture-constraint', label: 'Soil Texture' },
-  { id: 'wetland', label: 'Wetland' },
-  { id: 'existing-stps', label: 'Existing STPs' },
-  { id: 'built-up-area', label: 'Built-up Area' }
-];
-
-const conditioningFactors = [
-  { id: 'lithology', label: 'Lithology' },
-  { id: 'soil-type', label: 'Soil Type' },
-  { id: 'slope-condition', label: 'Slope' },
-  { id: 'distance-from-built-up', label: 'Distance from Built-up Land' },
-  { id: 'geomorphology', label: 'Geomorphology' },
-  { id: 'lulc', label: 'LULC' },
-  { id: 'population-density', label: 'Population Density' },
-  { id: 'groundwater-quality', label: 'Groundwater Quality' },
-  { id: 'elevation', label: 'Elevation' },
-  { id: 'drains', label: 'Drains' }
-];
-
-interface DataSelectionPartProps {
-  onSelectDatasets?: (datasets: Dataset[]) => void;
+interface DataSelectionProps {
+  onSelectDatasets: (datasets: Dataset[]) => void;
   onConstraintsChange?: (constraintIds: string[]) => void;
   onConditionsChange?: (conditionIds: string[]) => void;
 }
 
-export type { Dataset };
-
 export default function DataSelectionPart({ 
   onSelectDatasets, 
-  onConstraintsChange,
+  onConstraintsChange, 
   onConditionsChange 
-}: DataSelectionPartProps) {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedFilter, setSelectedFilter] = useState<'all' | 'constraints' | 'conditions'>('all');
-  const [selectedDatasets, setSelectedDatasets] = useState<Dataset[]>([]);
+}: DataSelectionProps) {
+  // Sample existing data
+  const existingConstraints: Dataset[] = [
+    { id: 'water', name: 'Water Bodies', type: 'constraints', description: 'Areas with water bodies' },
+    { id: 'roads', name: 'Roads', type: 'constraints', description: 'Areas near major roads' },
+    { id: 'prone', name: 'Flood Prone Area', type: 'constraints', description: 'Prone Areas' },
+    { id: 'slope', name: 'Steep Slopes', type: 'constraints', description: 'Areas with slope > 15%' },
+    { id: 'forest', name: 'Forest', type: 'constraints', description: 'Forest > 15%' },
+    { id: 'GWD', name: 'Ground Water Depth', type: 'constraints', description: 'Areas with low ground water depth' },
+    { id: 'airport', name: 'Airport', type: 'constraints', description: ' Areas near airports ' },
+    { id: 'asi sites', name: 'ASI Sites', type: 'constraints', description: 'Areas near ASI sites' },
+    { id: 'soiltexture', name: 'Soil Texture', type: 'constraints', description: 'Areas with specific soil texture' },
+    { id: 'wetland', name: 'Wetland', type: 'constraints', description: ' Areas with wetland' },
+    { id: 'existingSTPs', name: 'Existing STPs', type: 'constraints', description: 'Areas with existing STPs' },
+    { id: 'builduparea', name: 'Buildup Areas', type: 'constraints', description: ' Areas with buildup areas  ' },
+    
+  ];
+  
+  const existingConditions: Dataset[] = [
+    { id: 'elevation', name: 'Elevation', type: 'conditions', description: 'Higher elevation areas' },
+    { id: 'soilQuality', name: 'Soil Quality', type: 'conditions', description: 'Areas with good soil quality' },
+    { id: 'slopeGentle', name: 'Slope', type: 'conditions', description: 'Areas with gentle slopes' },
+    { id: 'lithology', name: 'Lithology', type: 'conditions', description: 'Areas with specific lithology' },
+    { id: 'distancfrombuildupland', name: 'Distance from Buildup Land', type: 'conditions', description: 'Areas with specific distance from buildup land' },
+    { id: 'geomorphology', name: 'Geomorphology', type: 'conditions', description: 'Areas with specific geomorphology' },
+    { id: 'lulc', name: 'Land Use/Land Cover', type: 'conditions', description: 'Areas with specific land use/land cover' },
+    { id: 'populationdensity', name: 'Population Density', type: 'conditions', description: 'Areas with specific population density' },
+    { id: 'groundwaterquality', name: 'Groundwater Quality', type: 'conditions', description: 'Areas with specific groundwater quality' },
+    { id: 'drains', name: 'Drains', type: 'conditions', description: 'Areas with specific drains' },
+    
+  ];
+  
+  // State
   const [dataSource, setDataSource] = useState<'existing' | 'upload'>('existing');
-  const [categoryType, setCategoryType] = useState<'constraints' | 'conditions'>('constraints');
-  const [selectedConstraints, setSelectedConstraints] = useState<string[]>(['flood-prone-area', 'forest', 'adi-sites', 'airport', 'wetland', 'existing-stps', 'built-up-area']);
-  const [selectedConditions, setSelectedConditions] = useState<string[]>(['soil-type', 'lulc', 'population-density', 'elevation', 'drains']);
-  const [showDatasetList, setShowDatasetList] = useState(true);
-
-  // Filter datasets based on search term and filter selection
-  const filteredDatasets = mockDatasets.filter(dataset => {
-    const matchesSearch = dataset.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          dataset.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesFilter = selectedFilter === 'all' || dataset.type === selectedFilter;
-    return matchesSearch && matchesFilter;
-  });
-
-  // Handle dataset selection/deselection
-  const toggleDatasetSelection = (dataset: Dataset) => {
-    const isSelected = selectedDatasets.some(d => d.id === dataset.id);
-    let updatedSelection;
+  const [selectedConstraintIds, setSelectedConstraintIds] = useState<string[]>([]);
+  const [selectedConditionIds, setSelectedConditionIds] = useState<string[]>([]);
+  const [uploadedDatasets, setUploadedDatasets] = useState<Dataset[]>([]);
+  const [uploadCategory, setUploadCategory] = useState<'constraints' | 'conditions'>('constraints');
+  const [fileInput, setFileInput] = useState<string>('');
+  const [showValidationPopup, setShowValidationPopup] = useState<boolean>(false);
+  
+  // Combined datasets
+  const allConstraints = [...existingConstraints, ...uploadedDatasets.filter(d => d.type === 'constraints')];
+  const allConditions = [...existingConditions, ...uploadedDatasets.filter(d => d.type === 'conditions')];
+  
+  // Handlers
+  const handleConstraintToggle = (id: string) => {
+    const newSelection = selectedConstraintIds.includes(id)
+      ? selectedConstraintIds.filter(constraintId => constraintId !== id)
+      : [...selectedConstraintIds, id];
     
-    if (isSelected) {
-      updatedSelection = selectedDatasets.filter(d => d.id !== dataset.id);
+    setSelectedConstraintIds(newSelection);
+    updateSelectedDatasets(newSelection, selectedConditionIds);
+    onConstraintsChange?.(newSelection);
+  };
+  
+  const handleConditionToggle = (id: string) => {
+    const newSelection = selectedConditionIds.includes(id)
+      ? selectedConditionIds.filter(conditionId => conditionId !== id)
+      : [...selectedConditionIds, id];
+    
+    setSelectedConditionIds(newSelection);
+    updateSelectedDatasets(selectedConstraintIds, newSelection);
+    onConditionsChange?.(newSelection);
+  };
+  
+  const updateSelectedDatasets = (constraintIds: string[], conditionIds: string[]) => {
+    const selectedConstraints = allConstraints.filter(dataset => constraintIds.includes(dataset.id));
+    const selectedConditions = allConditions.filter(dataset => conditionIds.includes(dataset.id));
+    onSelectDatasets([...selectedConstraints, ...selectedConditions]);
+  };
+  
+  const handleFileUpload = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (fileInput.trim() === '') return;
+    
+    // In a real application, you would handle the actual file upload here
+    // For this example, we're just simulating adding the file to our list
+    const newDataset: Dataset = {
+      id: `uploaded-${Date.now()}`,
+      name: fileInput,
+      type: uploadCategory,
+      description: `User uploaded ${uploadCategory} dataset`,
+      isUserUploaded: true
+    };
+    
+    setUploadedDatasets([...uploadedDatasets, newDataset]);
+    setFileInput('');
+  };
+
+  const handleApplySelection = () => {
+    if (selectedConstraintIds.length === 0 && selectedConditionIds.length === 0) {
+      // Show validation popup if no datasets are selected
+      setShowValidationPopup(true);
     } else {
-      updatedSelection = [...selectedDatasets, dataset];
-    }
-    
-    setSelectedDatasets(updatedSelection);
-    
-    // Call the parent callback if provided
-    if (onSelectDatasets) {
-      onSelectDatasets(updatedSelection);
+      // Process the selection (in a real app, this might navigate to the next step)
+      console.log('Selection applied:', {
+        constraints: allConstraints.filter(c => selectedConstraintIds.includes(c.id)),
+        conditions: allConditions.filter(c => selectedConditionIds.includes(c.id))
+      });
     }
   };
-
-  // Toggle constraint factor selection
-  const toggleConstraint = (id: string) => {
-    const updatedConstraints = selectedConstraints.includes(id)
-      ? selectedConstraints.filter(item => item !== id)
-      : [...selectedConstraints, id];
-    
-    setSelectedConstraints(updatedConstraints);
-    
-    if (onConstraintsChange) {
-      onConstraintsChange(updatedConstraints);
-    }
-  };
-
-  // Toggle conditioning factor selection
-  const toggleCondition = (id: string) => {
-    const updatedConditions = selectedConditions.includes(id)
-      ? selectedConditions.filter(item => item !== id)
-      : [...selectedConditions, id];
-    
-    setSelectedConditions(updatedConditions);
-    
-    if (onConditionsChange) {
-      onConditionsChange(updatedConditions);
-    }
-  };
-
-  // Handle file upload (mock function)
-  const handleFileUpload = () => {
-    console.log('File upload functionality would be implemented here');
+  
+  // Method to check if any data is selected - can be called from parent
+  // This is exported for use in page.tsx
+  const hasSelectedData = () => {
+    return selectedConstraintIds.length > 0 || selectedConditionIds.length > 0;
   };
 
   return (
-    <div className="border rounded-lg p-4">
+    <div className="bg-white rounded-lg shadow p-4">
+      <h2 className="text-lg font-semibold mb-4 text-cyan-600">Data Selection</h2>
+      
       {/* Data Source Selection */}
       <div className="mb-4">
-        <h3 className="text-md font-semibold mb-2">Select Data Source :</h3>
-        <div className="flex gap-4">
-          <label className="flex items-center">
+        <div className="flex space-x-4">
+          <label className="inline-flex items-center">
             <input
               type="radio"
+              className="form-radio text-cyan-600"
               name="dataSource"
               checked={dataSource === 'existing'}
-              onChange={() => {
-                setDataSource('existing');
-                setShowDatasetList(true);
-              }}
-              className="mr-2"
+              onChange={() => setDataSource('existing')}
             />
-            Select Existing
+            <span className="ml-2">Select Existing</span>
           </label>
-          <label className="flex items-center">
+          <label className="inline-flex items-center">
             <input
               type="radio"
+              className="form-radio text-cyan-600"
               name="dataSource"
               checked={dataSource === 'upload'}
-              onChange={() => {
-                setDataSource('upload');
-                setShowDatasetList(false);
-              }}
-              className="mr-2"
+              onChange={() => setDataSource('upload')}
             />
-            Upload New
+            <span className="ml-2">Upload New</span>
           </label>
         </div>
       </div>
       
-      {/* Category Type Selection (only for upload) */}
-      {dataSource === 'upload' && (
+      {/* Existing Data Selection */}
+      {dataSource === 'existing' && (
         <div className="mb-4">
-          <h3 className="text-md font-semibold mb-2">Select Category Type:</h3>
-          <div className="flex gap-4">
-            <label className="flex items-center">
-              <input
-                type="radio"
-                name="categoryType"
-                checked={categoryType === 'constraints'}
-                onChange={() => setCategoryType('constraints')}
-                className="mr-2"
-              />
-              Constraints factor Type Data
-            </label>
-            <label className="flex items-center">
-              <input
-                type="radio"
-                name="categoryType"
-                checked={categoryType === 'conditions'}
-                onChange={() => setCategoryType('conditions')}
-                className="mr-2"
-              />
-              Conditioning factor Type Data
-            </label>
+          <div>
+            <h3 className="font-medium text-gray-700 mb-2">Conditioning Factors</h3>
+            <div className="divide-y divide-gray-200 max-h-60 overflow-y-auto border rounded-md">
+              {allConditions.length === 0 ? (
+                <div className="p-3 text-gray-500 text-sm">No conditions available</div>
+              ) : (
+                allConditions.map((condition) => (
+                  <div key={condition.id} className="py-3 px-3 flex items-start">
+                    <input
+                      type="checkbox"
+                      id={`condition-${condition.id}`}
+                      checked={selectedConditionIds.includes(condition.id)}
+                      onChange={() => handleConditionToggle(condition.id)}
+                      className="h-4 w-4 mt-1 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
+                    />
+                    <label htmlFor={`condition-${condition.id}`} className="ml-3 cursor-pointer">
+                      <div className="font-medium text-gray-700 flex items-center">
+                        {condition.name}
+                        {condition.isUserUploaded && (
+                          <span className="ml-2 px-2 py-0.5 bg-blue-100 text-blue-800 text-xs rounded">Uploaded</span>
+                        )}
+                      </div>
+                      <div className="text-xs text-gray-500 mt-0.5">
+                        {condition.description}
+                      </div>
+                    </label>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
           
-          <div className="mt-2 flex">
-            <div className="flex-1 relative">
-              <input
-                type="text"
-                placeholder="Browse Data"
-                className="w-full border px-3 py-2 rounded-md"
-                readOnly
-              />
-              <div className="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none opacity-50">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
-                </svg>
+          <div className="mb-4 mt-4">
+            <h3 className="font-medium text-gray-700 mb-2">Constraints Factors</h3>
+            <div className="divide-y divide-gray-200 max-h-60 overflow-y-auto border rounded-md">
+              {allConstraints.length === 0 ? (
+                <div className="p-3 text-gray-500 text-sm">No constraints available</div>
+              ) : (
+                allConstraints.map((constraint) => (
+                  <div key={constraint.id} className="py-3 px-3 flex items-start">
+                    <input
+                      type="checkbox"
+                      id={`constraint-${constraint.id}`}
+                      checked={selectedConstraintIds.includes(constraint.id)}
+                      onChange={() => handleConstraintToggle(constraint.id)}
+                      className="h-4 w-4 mt-1 text-red-600 focus:ring-red-500 border-gray-300 rounded"
+                    />
+                    <label htmlFor={`constraint-${constraint.id}`} className="ml-3 cursor-pointer">
+                      <div className="font-medium text-gray-700 flex items-center">
+                        {constraint.name}
+                        {constraint.isUserUploaded && (
+                          <span className="ml-2 px-2 py-0.5 bg-blue-100 text-blue-800 text-xs rounded">Uploaded</span>
+                        )}
+                      </div>
+                      <div className="text-xs text-gray-500 mt-0.5">
+                        {constraint.description}
+                      </div>
+                    </label>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Upload New Data */}
+      {dataSource === 'upload' && (
+        <div className="mb-4">
+          <form onSubmit={handleFileUpload} className="mb-6 p-4 border rounded-md bg-gray-50">
+            <div className="mb-3">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Category
+              </label>
+              <div className="flex space-x-4">
+                <label className="inline-flex items-center">
+                  <input
+                    type="radio"
+                    className="form-radio text-red-600"
+                    name="uploadCategory"
+                    checked={uploadCategory === 'constraints'}
+                    onChange={() => setUploadCategory('constraints')}
+                  />
+                  <span className="ml-2">Constraints</span>
+                </label>
+                <label className="inline-flex items-center">
+                  <input
+                    type="radio"
+                    className="form-radio text-purple-600"
+                    name="uploadCategory"
+                    checked={uploadCategory === 'conditions'}
+                    onChange={() => setUploadCategory('conditions')}
+                  />
+                  <span className="ml-2">Conditions</span>
+                </label>
               </div>
             </div>
+            
+            <div className="mb-3">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Select File
+              </label>
+              <div className="flex">
+                <input
+                  type="file"
+                  className="hidden"
+                  id="fileUpload"
+                  onChange={(e) => e.target.files && setFileInput(e.target.files[0].name)}
+                />
+                <input
+                  type="text"
+                  className="flex-grow border border-gray-300 rounded-l-md px-3 py-2"
+                  placeholder="No file selected"
+                  value={fileInput}
+                  readOnly
+                />
+                <label
+                  htmlFor="fileUpload"
+                  className="bg-gray-300 hover:bg-gray-400 text-gray-700 px-4 py-2 rounded-r-md cursor-pointer"
+                >
+                  Browse
+                </label>
+              </div>
+            </div>
+            
             <button
-              onClick={handleFileUpload}
-              className="ml-2 bg-green-500 text-white px-4 py-2 rounded-md"
+              type="submit"
+              className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              disabled={fileInput === ''}
             >
               Upload
             </button>
+          </form>
+          
+          <div>
+            <h3 className="font-medium text-gray-700 mb-2">Conditioning Factors</h3>
+            <div className="divide-y divide-gray-200 max-h-60 overflow-y-auto border rounded-md">
+              {allConditions.length === 0 ? (
+                <div className="p-3 text-gray-500 text-sm">No conditions available</div>
+              ) : (
+                allConditions.map((condition) => (
+                  <div key={condition.id} className="py-3 px-3 flex items-start">
+                    <input
+                      type="checkbox"
+                      id={`upload-condition-${condition.id}`}
+                      checked={selectedConditionIds.includes(condition.id)}
+                      onChange={() => handleConditionToggle(condition.id)}
+                      className="h-4 w-4 mt-1 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
+                    />
+                    <label htmlFor={`upload-condition-${condition.id}`} className="ml-3 cursor-pointer">
+                      <div className="font-medium text-gray-700 flex items-center">
+                        {condition.name}
+                        {condition.isUserUploaded && (
+                          <span className="ml-2 px-2 py-0.5 bg-blue-100 text-blue-800 text-xs rounded">Uploaded</span>
+                        )}
+                      </div>
+                      <div className="text-xs text-gray-500 mt-0.5">
+                        {condition.description}
+                      </div>
+                    </label>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          <div className="mb-4 mt-4">
+            <h3 className="font-medium text-gray-700 mb-2">Constraints Factors</h3>
+            <div className="divide-y divide-gray-200 max-h-60 overflow-y-auto border rounded-md">
+              {allConstraints.length === 0 ? (
+                <div className="p-3 text-gray-500 text-sm">No constraints available</div>
+              ) : (
+                allConstraints.map((constraint) => (
+                  <div key={constraint.id} className="py-3 px-3 flex items-start">
+                    <input
+                      type="checkbox"
+                      id={`upload-constraint-${constraint.id}`}
+                      checked={selectedConstraintIds.includes(constraint.id)}
+                      onChange={() => handleConstraintToggle(constraint.id)}
+                      className="h-4 w-4 mt-1 text-red-600 focus:ring-red-500 border-gray-300 rounded"
+                    />
+                    <label htmlFor={`upload-constraint-${constraint.id}`} className="ml-3 cursor-pointer">
+                      <div className="font-medium text-gray-700 flex items-center">
+                        {constraint.name}
+                        {constraint.isUserUploaded && (
+                          <span className="ml-2 px-2 py-0.5 bg-blue-100 text-blue-800 text-xs rounded">Uploaded</span>
+                        )}
+                      </div>
+                      <div className="text-xs text-gray-500 mt-0.5">
+                        {constraint.description}
+                      </div>
+                    </label>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
         </div>
       )}
       
-      {/* Dataset List (only when selecting existing) */}
-      {dataSource === 'existing' && showDatasetList && (
-        <div className="mb-4">
-          <div className="flex flex-col sm:flex-row gap-4 mb-4">
-            <div className="w-full sm:w-2/3">
-              <label htmlFor="search-datasets" className="block text-sm font-medium text-gray-700 mb-1">
-                Search Datasets
-              </label>
-              <input
-                id="search-datasets"
-                type="text"
-                placeholder="Search by name or description"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
-            
-            <div className="w-full sm:w-1/3">
-              <label htmlFor="filter-type" className="block text-sm font-medium text-gray-700 mb-1">
-                Filter by Type
-              </label>
-              <select
-                id="filter-type"
-                value={selectedFilter}
-                onChange={(e) => setSelectedFilter(e.target.value as 'all' | 'constraints' | 'conditions')}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value="all">All Types</option>
-                <option value="constraints">Constraints</option>
-                <option value="conditions">Conditions</option>
-              </select>
-            </div>
-          </div>
-          
-          <div className="mt-4 border rounded-md overflow-hidden">
-            <div className="bg-gray-100 px-4 py-2 border-b flex">
-              <div className="w-8"></div>
-              <div className="flex-1 font-medium">Name</div>
-              <div className="flex-1 hidden sm:block font-medium">Description</div>
-              <div className="w-24 text-center hidden sm:block font-medium">Type</div>
-            </div>
-            
-            {filteredDatasets.length > 0 ? (
-              <div className="divide-y">
-                {filteredDatasets.map((dataset) => {
-                  const isSelected = selectedDatasets.some(d => d.id === dataset.id);
-                  return (
-                    <div 
-                      key={dataset.id} 
-                      className={`px-4 py-3 flex items-center hover:bg-gray-50 cursor-pointer ${isSelected ? 'bg-blue-50' : ''}`}
-                      onClick={() => toggleDatasetSelection(dataset)}
-                    >
-                      <div className="w-8">
-                        <input 
-                          type="checkbox" 
-                          checked={isSelected}
-                          onChange={() => {}} // Handled by the div click
-                          className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
-                        />
-                      </div>
-                      <div className="flex-1 font-medium">{dataset.name}</div>
-                      <div className="flex-1 text-gray-600 hidden sm:block text-sm">{dataset.description}</div>
-                      <div className="w-24 text-center hidden sm:block">
-                        <span 
-                          className={`px-2 py-1 text-xs rounded-full ${
-                            dataset.type === 'constraints' 
-                              ? 'bg-orange-100 text-orange-800' 
-                              : 'bg-green-100 text-green-800'
-                          }`}
-                        >
-                          {dataset.type}
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+      {/* Selected Items Summary */}
+      <div className="mt-6 bg-gray-50 p-3 rounded-md">
+        <h3 className="font-medium text-gray-700 mb-2">Selected Datasets</h3>
+        
+        <div className="mb-2">
+          <h4 className="text-sm font-medium text-gray-600">Constraints:</h4>
+          <div className="text-sm text-gray-500">
+            {selectedConstraintIds.length === 0 ? (
+              <span className="italic">None selected</span>
             ) : (
-              <div className="p-6 text-center text-gray-500">
-                No datasets found matching your search criteria.
-              </div>
+              <ul className="list-disc pl-5">
+                {allConstraints
+                  .filter(c => selectedConstraintIds.includes(c.id))
+                  .map(c => (
+                    <li key={c.id}>{c.name}</li>
+                  ))}
+              </ul>
             )}
           </div>
-          
-          <div className="flex flex-col sm:flex-row items-center justify-between mt-4 gap-4">
-            <div className="text-sm text-gray-700">
-              <span className="font-medium">{selectedDatasets.length}</span> dataset{selectedDatasets.length !== 1 ? 's' : ''} selected
+        </div>
+        
+        <div className="mb-2">
+          <h4 className="text-sm font-medium text-gray-600">Conditions:</h4>
+          <div className="text-sm text-gray-500">
+            {selectedConditionIds.length === 0 ? (
+              <span className="italic">None selected</span>
+            ) : (
+              <ul className="list-disc pl-5">
+                {allConditions
+                  .filter(c => selectedConditionIds.includes(c.id))
+                  .map(c => (
+                    <li key={c.id}>{c.name}</li>
+                  ))}
+              </ul>
+            )}
+          </div>
+        </div>
+        
+        <div className="flex justify-between items-center mt-4">
+          <div>
+            <span className="text-sm font-medium text-gray-700">
+              Selected: {selectedConstraintIds.length} constraints, 
+              {selectedConditionIds.length} conditions
+            </span>
+          </div>
+          <button 
+            className="bg-cyan-500 text-white px-4 py-2 rounded-md hover:bg-cyan-600 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2"
+            onClick={handleApplySelection}
+          >
+            Apply Selection
+          </button>
+        </div>
+      </div>
+      
+      {/* Validation Popup */}
+      {showValidationPopup && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full">
+            <div className="flex items-center mb-4 text-red-600">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <h3 className="text-lg font-medium">Selection Required</h3>
             </div>
-            
-            <button 
-              onClick={() => setSelectedDatasets([])}
-              disabled={selectedDatasets.length === 0}
-              className={`px-3 py-1.5 border border-gray-300 rounded-md text-sm ${
-                selectedDatasets.length === 0 
-                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
-                  : 'text-gray-700 hover:bg-gray-50'
-              }`}
-            >
-              Clear Selection
-            </button>
+            <p className="mb-4 text-gray-600">
+              Please select at least one dataset from either Constraints or Conditions before proceeding.
+            </p>
+            <div className="flex justify-end">
+              <button
+                className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                onClick={() => setShowValidationPopup(false)}
+              >
+                OK
+              </button>
+            </div>
           </div>
         </div>
       )}
-      
-      {/* Constraint Factors */}
-      <div className="mb-4">
-        <h3 className="text-md font-semibold mb-2">Constraint Factors :</h3>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-2">
-          {constraintFactors.map(factor => (
-            <div key={factor.id} className="flex items-center">
-              <input
-                type="checkbox"
-                id={factor.id}
-                checked={selectedConstraints.includes(factor.id)}
-                onChange={() => toggleConstraint(factor.id)}
-                className="mr-2"
-              />
-              <label htmlFor={factor.id} className="text-sm">{factor.label}</label>
-            </div>
-          ))}
-        </div>
-      </div>
-      
-      {/* Conditioning Factors */}
-      <div>
-        <h3 className="text-md font-semibold mb-2">Conditioning Factors :</h3>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-2">
-          {conditioningFactors.map(factor => (
-            <div key={factor.id} className="flex items-center">
-              <input
-                type="checkbox"
-                id={factor.id}
-                checked={selectedConditions.includes(factor.id)}
-                onChange={() => toggleCondition(factor.id)}
-                className="mr-2"
-              />
-              <label htmlFor={factor.id} className="text-sm">{factor.label}</label>
-            </div>
-          ))}
-        </div>
-      </div>
     </div>
   );
+}
+
+export function hasSelectedData(datasets: Dataset[]): boolean {
+  return datasets.length > 0;
 }
