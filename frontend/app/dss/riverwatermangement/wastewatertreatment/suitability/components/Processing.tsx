@@ -64,6 +64,98 @@ export default function ProcessingPart({ selectedDatasets, selectedConstraints, 
   // Filter constraints based on selected IDs
   const activeConstraints = constraints.filter((c) => selectedConstraints.includes(c.id));
 
+  // Helper functions for STP files table
+  const getFileIcon = (fileType?: string) => {
+    switch (fileType?.toLowerCase()) {
+      case 'shp':
+        return '📊';
+      case 'tif':
+      case 'tiff':
+        return '🗺️';
+      default:
+        return '📄';
+    }
+  };
+
+  const getFormatDisplay = (file: Dataset) => {
+    if (file.format) return file.format;
+    if (file.fileType === 'shp') return 'Vector';
+    if (['tif', 'tiff'].includes(file.fileType || '')) return 'Raster';
+    return 'Other';
+  };
+
+  const getCoordinateDisplay = (file: Dataset) => {
+    return file.coordinateSystem || 'Not specified';
+  };
+
+  const getResolutionDisplay = (file: Dataset) => {
+    if (file.format === 'Vector' || file.fileType === 'shp') return 'N/A';
+    return file.resolution || 'Not specified';
+  };
+
+  // Filter STP files from selectedDatasets
+  const stpFiles = selectedDatasets.filter((dataset) => dataset.type === 'stp_files');
+  const otherDatasets = selectedDatasets.filter((dataset) => dataset.type !== 'stp_files');
+
+  // Render STP Files Table
+  const renderStpFilesTable = (files: Dataset[]) => {
+    return (
+      <div className="overflow-x-auto max-h-60 overflow-y-auto border rounded-md">
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-50 sticky top-0">
+            <tr>
+              <th scope="col" className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                File
+              </th>
+              <th scope="col" className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Format
+              </th>
+              <th scope="col" className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Coordinate
+              </th>
+              <th scope="col" className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Resolution
+              </th>
+              
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200">
+            {files.length === 0 ? (
+              <tr>
+                <td colSpan={4} className="px-3 py-3 text-gray-500 text-sm text-center">
+                  No STP files selected
+                </td>
+              </tr>
+            ) : (
+              files.map((file) => (
+                <tr key={file.id} className="hover:bg-gray-100">
+                  <td className="px-3 py-3 whitespace-nowrap">
+                    <div className="flex items-center">
+                      <span className="mr-2">{getFileIcon(file.fileType)}</span>
+                      <span className="font-medium text-gray-700">{file.name}</span>
+                      {file.isUserUploaded && (
+                        <span className="ml-2 px-2 py-0.5 bg-blue-100 text-blue-800 text-xs rounded">Uploaded</span>
+                      )}
+                    </div>
+                  </td>
+                  <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-700">
+                    {getFormatDisplay(file)}
+                  </td>
+                  <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-700">
+                    {getCoordinateDisplay(file)}
+                  </td>
+                  <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-700">
+                    {getResolutionDisplay(file)}
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+    );
+  };
+
   // Update reclassification table based on classificationClasses
   useEffect(() => {
     if (classificationClasses !== undefined && classificationClasses >= 2 && classificationClasses <= 10) {
@@ -200,31 +292,22 @@ export default function ProcessingPart({ selectedDatasets, selectedConstraints, 
           <div className="mb-4">
             <h3 className="font-medium mb-2 text-gray-700">Datasets & Constraints</h3>
             <div className="grid grid-cols-2 gap-2">
-              <div className="bg-gray-50 p-3 rounded-md max-h-32 overflow-y-auto">
-                <p className="text-sm font-medium mb-1 text-gray-600">Selected Datasets</p>
-                {selectedDatasets.map((dataset) => (
-                  <div key={dataset.id} className="flex items-center mb-1">
-                    <div className="w-3 h-3 rounded-full bg-blue-500 mr-2"></div>
-                    <span className="text-sm">{dataset.name}</span>
-                  </div>
-                ))}
-              </div>
-              <div className="bg-gray-50 p-3 rounded-md max-h-32 overflow-y-auto">
-                <p className="text-sm font-medium mb-1 text-gray-600">Selected Constraints</p>
-                {activeConstraints.length > 0 ? (
-                  activeConstraints.map((constraint) => (
-                    <div key={constraint.id} className="flex items-center mb-1">
-                      <div
-                        className="w-3 h-3 rounded-full mr-2"
-                        style={{ backgroundColor: constraint.color }}
-                      ></div>
-                      <span className="text-sm">{constraint.name}</span>
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-sm text-gray-500 italic">No constraints selected</p>
+              <div className="bg-gray-50 p-3 rounded-md max-h-60 overflow-y-auto">
+                <p className="text-sm font-medium mb-1 text-gray-600">Selected STP Files</p>
+                {renderStpFilesTable(stpFiles)}
+                {otherDatasets.length > 0 && (
+                  <>
+                    <p className="text-sm font-medium mt-3 mb-1 text-gray-600">Other Datasets</p>
+                    {otherDatasets.map((dataset) => (
+                      <div key={dataset.id} className="flex items-center mb-1">
+                        <div className="w-3 h-3 rounded-full bg-blue-500 mr-2"></div>
+                        <span className="text-sm">{dataset.name}</span>
+                      </div>
+                    ))}
+                  </>
                 )}
               </div>
+              
             </div>
           </div>
 

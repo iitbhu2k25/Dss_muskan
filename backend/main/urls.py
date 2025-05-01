@@ -7,4 +7,5 @@ urlpatterns = [
     path("api/basic/", include("Basic.urls")),
     path("api/raster_visual/",include("raster_visual.urls")),
     path("api/gwa/", include("gwa.urls")), 
+    path("api/stp_suitability/", include("stp_suitability.urls")),
 ]

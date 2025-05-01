@@ -1,25 +1,31 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 export interface Dataset {
   id: string;
   name: string;
-  type: string; // 'constraints' or 'conditions'
+  type: string; // 'constraints' or 'conditions' or 'stp_files'
   description: string;
   isUserUploaded?: boolean;
+  fileType?: string; // For STP files: 'shp', 'tif', 'tiff'
+  format?: string; // 'Raster' or 'Vector'
+  coordinateSystem?: string; // e.g., 'EPSG:4326'
+  resolution?: string; // e.g., '30m x 30m'
 }
 
 interface DataSelectionProps {
   onSelectDatasets: (datasets: Dataset[]) => void;
   onConstraintsChange?: (constraintIds: string[]) => void;
   onConditionsChange?: (conditionIds: string[]) => void;
+  onStpFilesChange?: (stpFileIds: string[]) => void;
 }
 
 export default function DataSelectionPart({ 
   onSelectDatasets, 
   onConstraintsChange, 
-  onConditionsChange 
+  onConditionsChange,
+  onStpFilesChange
 }: DataSelectionProps) {
   // Sample existing data
   const existingConstraints: Dataset[] = [
@@ -35,7 +41,6 @@ export default function DataSelectionPart({
     { id: 'wetland', name: 'Wetland', type: 'constraints', description: ' Areas with wetland' },
     { id: 'existingSTPs', name: 'Existing STPs', type: 'constraints', description: 'Areas with existing STPs' },
     { id: 'builduparea', name: 'Buildup Areas', type: 'constraints', description: ' Areas with buildup areas  ' },
-    
   ];
   
   const existingConditions: Dataset[] = [
@@ -49,21 +54,49 @@ export default function DataSelectionPart({
     { id: 'populationdensity', name: 'Population Density', type: 'conditions', description: 'Areas with specific population density' },
     { id: 'groundwaterquality', name: 'Groundwater Quality', type: 'conditions', description: 'Areas with specific groundwater quality' },
     { id: 'drains', name: 'Drains', type: 'conditions', description: 'Areas with specific drains' },
-    
   ];
   
   // State
   const [dataSource, setDataSource] = useState<'existing' | 'upload'>('existing');
   const [selectedConstraintIds, setSelectedConstraintIds] = useState<string[]>([]);
   const [selectedConditionIds, setSelectedConditionIds] = useState<string[]>([]);
+  const [selectedStpFileIds, setSelectedStpFileIds] = useState<string[]>([]);
   const [uploadedDatasets, setUploadedDatasets] = useState<Dataset[]>([]);
-  const [uploadCategory, setUploadCategory] = useState<'constraints' | 'conditions'>('constraints');
+  const [uploadCategory, setUploadCategory] = useState<'constraints' | 'conditions' | 'stp_files'>('constraints');
   const [fileInput, setFileInput] = useState<string>('');
   const [showValidationPopup, setShowValidationPopup] = useState<boolean>(false);
+  const [stpFiles, setStpFiles] = useState<Dataset[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   
   // Combined datasets
   const allConstraints = [...existingConstraints, ...uploadedDatasets.filter(d => d.type === 'constraints')];
   const allConditions = [...existingConditions, ...uploadedDatasets.filter(d => d.type === 'conditions')];
+  const allStpFiles = [...stpFiles, ...uploadedDatasets.filter(d => d.type === 'stp_files')]
+    .filter(d => ['shp', 'tif', 'tiff'].includes(d.fileType?.toLowerCase() || ''));
+
+  // Fetch STP files from backend
+  useEffect(() => {
+    const fetchStpFiles = async () => {
+      try {
+        setIsLoading(true);
+        const response = await fetch('http://localhost:9000/api/stp_suitability/stp-files/');
+        if (!response.ok) {
+          throw new Error('Failed to fetch STP files');
+        }
+        const data = await response.json();
+        const filteredStpFiles = data.filter((file: Dataset) =>
+          ['shp', 'tif', 'tiff'].includes(file.fileType?.toLowerCase() || '')
+        );
+        setStpFiles(filteredStpFiles);
+      } catch (error) {
+        console.error('Error fetching STP files:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchStpFiles();
+  }, []);
   
   // Handlers
   const handleConstraintToggle = (id: string) => {
@@ -72,7 +105,7 @@ export default function DataSelectionPart({
       : [...selectedConstraintIds, id];
     
     setSelectedConstraintIds(newSelection);
-    updateSelectedDatasets(newSelection, selectedConditionIds);
+    updateSelectedDatasets(newSelection, selectedConditionIds, selectedStpFileIds);
     onConstraintsChange?.(newSelection);
   };
   
@@ -82,14 +115,25 @@ export default function DataSelectionPart({
       : [...selectedConditionIds, id];
     
     setSelectedConditionIds(newSelection);
-    updateSelectedDatasets(selectedConstraintIds, newSelection);
+    updateSelectedDatasets(selectedConstraintIds, newSelection, selectedStpFileIds);
     onConditionsChange?.(newSelection);
   };
+
+  const handleStpFileToggle = (id: string) => {
+    const newSelection = selectedStpFileIds.includes(id)
+      ? selectedStpFileIds.filter(stpFileId => stpFileId !== id)
+      : [...selectedStpFileIds, id];
+    
+    setSelectedStpFileIds(newSelection);
+    updateSelectedDatasets(selectedConstraintIds, selectedConditionIds, newSelection);
+    onStpFilesChange?.(newSelection);
+  };
   
-  const updateSelectedDatasets = (constraintIds: string[], conditionIds: string[]) => {
+  const updateSelectedDatasets = (constraintIds: string[], conditionIds: string[], stpFileIds: string[]) => {
     const selectedConstraints = allConstraints.filter(dataset => constraintIds.includes(dataset.id));
     const selectedConditions = allConditions.filter(dataset => conditionIds.includes(dataset.id));
-    onSelectDatasets([...selectedConstraints, ...selectedConditions]);
+    const selectedStpFiles = allStpFiles.filter(dataset => stpFileIds.includes(dataset.id));
+    onSelectDatasets([...selectedConstraints, ...selectedConditions, ...selectedStpFiles]);
   };
   
   const handleFileUpload = (e: React.FormEvent) => {
@@ -97,14 +141,30 @@ export default function DataSelectionPart({
     
     if (fileInput.trim() === '') return;
     
-    // In a real application, you would handle the actual file upload here
-    // For this example, we're just simulating adding the file to our list
+    const fileExtension = fileInput.split('.').pop()?.toLowerCase();
+    if (uploadCategory === 'stp_files' && !['shp', 'tif', 'tiff'].includes(fileExtension || '')) {
+      alert('Only .shp and .tif/.tiff files are allowed for STP Files.');
+      return;
+    }
+    
+    // Determine format based on file extension
+    let format = "Other";
+    if (fileExtension === 'shp') format = "Vector";
+    if (['tif', 'tiff'].includes(fileExtension || '')) format = "Raster";
+    
+    // For uploaded files, don't set default metadata values
+    // The user might set these later or they'll be extracted when the file is processed
     const newDataset: Dataset = {
       id: `uploaded-${Date.now()}`,
       name: fileInput,
       type: uploadCategory,
       description: `User uploaded ${uploadCategory} dataset`,
-      isUserUploaded: true
+      isUserUploaded: true,
+      fileType: fileExtension || 'unknown',
+      format: format,
+      // Leave coordinateSystem and resolution empty for uploaded files
+      coordinateSystem: '',
+      resolution: format === 'Raster' ? '' : 'N/A'
     };
     
     setUploadedDatasets([...uploadedDatasets, newDataset]);
@@ -112,22 +172,119 @@ export default function DataSelectionPart({
   };
 
   const handleApplySelection = () => {
-    if (selectedConstraintIds.length === 0 && selectedConditionIds.length === 0) {
-      // Show validation popup if no datasets are selected
+    if (selectedConstraintIds.length === 0 && selectedConditionIds.length === 0 && selectedStpFileIds.length === 0) {
       setShowValidationPopup(true);
     } else {
-      // Process the selection (in a real app, this might navigate to the next step)
       console.log('Selection applied:', {
         constraints: allConstraints.filter(c => selectedConstraintIds.includes(c.id)),
-        conditions: allConditions.filter(c => selectedConditionIds.includes(c.id))
+        conditions: allConditions.filter(c => selectedConditionIds.includes(c.id)),
+        stpFiles: allStpFiles.filter(f => selectedStpFileIds.includes(f.id))
       });
     }
   };
   
-  // Method to check if any data is selected - can be called from parent
-  // This is exported for use in page.tsx
   const hasSelectedData = () => {
-    return selectedConstraintIds.length > 0 || selectedConditionIds.length > 0;
+    return selectedConstraintIds.length > 0 || selectedConditionIds.length > 0 || selectedStpFileIds.length > 0;
+  };
+
+  const getFileIcon = (fileType?: string) => {
+    switch(fileType?.toLowerCase()) {
+      case 'shp':
+        return '📊';
+      case 'tif':
+      case 'tiff':
+        return '🗺️';
+      default:
+        return '📄';
+    }
+  };
+
+  // Get format display value based on file data
+  const getFormatDisplay = (file: Dataset) => {
+    if (file.format) return file.format;
+    if (file.fileType === 'shp') return 'Vector';
+    if (['tif', 'tiff'].includes(file.fileType || '')) return 'Raster';
+    return 'Other';
+  };
+
+  // Get coordinate system display, handling empty values
+  const getCoordinateDisplay = (file: Dataset) => {
+    return file.coordinateSystem || 'Not specified';
+  };
+
+  // Get resolution display, handling empty values
+  const getResolutionDisplay = (file: Dataset) => {
+    if (file.format === 'Vector' || file.fileType === 'shp') return 'N/A';
+    return file.resolution || 'Not specified';
+  };
+
+  // Render STP Files as a table
+  const renderStpFilesTable = (files: Dataset[]) => {
+    return (
+      <div className="overflow-x-auto max-h-60 overflow-y-auto border rounded-md">
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-50 sticky top-0">
+            <tr>
+              <th scope="col" className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                File
+              </th>
+              <th scope="col" className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Format
+              </th>
+              <th scope="col" className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Coordinate
+              </th>
+              <th scope="col" className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Resolution
+              </th>
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200">
+            {files.length === 0 ? (
+              <tr>
+                <td colSpan={4} className="px-3 py-3 text-gray-500 text-sm text-center">
+                  No STP files available
+                </td>
+              </tr>
+            ) : (
+              files.map((file) => (
+                <tr key={file.id} className={selectedStpFileIds.includes(file.id) ? "bg-green-50" : ""}>
+                  <td className="px-3 py-3 whitespace-nowrap">
+                    <div className="flex items-start">
+                      <input
+                        type="checkbox"
+                        id={`stp-file-${file.id}`}
+                        checked={selectedStpFileIds.includes(file.id)}
+                        onChange={() => handleStpFileToggle(file.id)}
+                        className="h-4 w-4 mt-1 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                      />
+                      <label htmlFor={`stp-file-${file.id}`} className="ml-3 cursor-pointer">
+                        <div className="flex items-center">
+                          <span className="mr-2">{getFileIcon(file.fileType)}</span>
+                          <span className="font-medium text-gray-700">{file.name}</span>
+                          {file.isUserUploaded && (
+                            <span className="ml-2 px-2 py-0.5 bg-blue-100 text-blue-800 text-xs rounded">Uploaded</span>
+                          )}
+                        </div>
+                      </label>
+                    </div>
+                  </td>
+                  <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-700">
+                    {getFormatDisplay(file)}
+                  </td>
+                  <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-700">
+                    {getCoordinateDisplay(file)}
+                  </td>
+                  <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-700">
+                    {getResolutionDisplay(file)}
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+    );
   };
 
   return (
@@ -226,6 +383,21 @@ export default function DataSelectionPart({
               )}
             </div>
           </div>
+
+          <div className="mb-4 mt-4">
+            <h3 className="font-medium text-gray-700 mb-2">STP Suitability Files</h3>
+            {isLoading ? (
+              <div className="p-3 text-gray-500 text-sm flex items-center justify-center border rounded-md">
+                <svg className="animate-spin h-5 w-5 mr-3 text-cyan-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Loading STP files...
+              </div>
+            ) : (
+              renderStpFilesTable(allStpFiles)
+            )}
+          </div>
         </div>
       )}
       
@@ -258,6 +430,16 @@ export default function DataSelectionPart({
                   />
                   <span className="ml-2">Conditions</span>
                 </label>
+                <label className="inline-flex items-center">
+                  <input
+                    type="radio"
+                    className="form-radio text-green-600"
+                    name="uploadCategory"
+                    checked={uploadCategory === 'stp_files'}
+                    onChange={() => setUploadCategory('stp_files')}
+                  />
+                  <span className="ml-2">STP Files</span>
+                </label>
               </div>
             </div>
             
@@ -270,6 +452,7 @@ export default function DataSelectionPart({
                   type="file"
                   className="hidden"
                   id="fileUpload"
+                  accept={uploadCategory === 'stp_files' ? '.shp,.tif,.tiff' : '*'}
                   onChange={(e) => e.target.files && setFileInput(e.target.files[0].name)}
                 />
                 <input
@@ -286,6 +469,9 @@ export default function DataSelectionPart({
                   Browse
                 </label>
               </div>
+              {uploadCategory === 'stp_files' && (
+                <p className="text-xs text-gray-500 mt-1">Only .shp and .tif/.tiff files are allowed</p>
+              )}
             </div>
             
             <button
@@ -360,6 +546,21 @@ export default function DataSelectionPart({
               )}
             </div>
           </div>
+
+          <div className="mb-4 mt-4">
+            <h3 className="font-medium text-gray-700 mb-2">STP Suitability Files</h3>
+            {isLoading ? (
+              <div className="p-3 text-gray-500 text-sm flex items-center justify-center border rounded-md">
+                <svg className="animate-spin h-5 w-5 mr-3 text-cyan-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Loading STP files...
+              </div>
+            ) : (
+              renderStpFilesTable(allStpFiles)
+            )}
+          </div>
         </div>
       )}
       
@@ -400,12 +601,52 @@ export default function DataSelectionPart({
             )}
           </div>
         </div>
+
+        <div className="mb-2">
+          <h4 className="text-sm font-medium text-gray-600">STP Files:</h4>
+          <div className="text-sm text-gray-500">
+            {selectedStpFileIds.length === 0 ? (
+              <span className="italic">None selected</span>
+            ) : (
+              <div className="mt-2">
+                <table className="min-w-full text-sm border-collapse">
+                  <thead>
+                    <tr className="bg-gray-100">
+                      <th className="text-left p-1">File</th>
+                      <th className="text-left p-1">Format</th>
+                      <th className="text-left p-1">Coordinate</th>
+                      <th className="text-left p-1">Resolution</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {allStpFiles
+                      .filter(f => selectedStpFileIds.includes(f.id))
+                      .map(f => (
+                        <tr key={f.id} className="border-t border-gray-200">
+                          <td className="p-1">
+                            <span className="mr-1">{getFileIcon(f.fileType)}</span>
+                            {f.name}
+                          </td>
+                          <td className="p-1">
+                            {getFormatDisplay(f)}
+                          </td>
+                          <td className="p-1">{getCoordinateDisplay(f)}</td>
+                          <td className="p-1">{getResolutionDisplay(f)}</td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+                </div>
+            )}
+          </div>
+        </div>
         
         <div className="flex justify-between items-center mt-4">
           <div>
             <span className="text-sm font-medium text-gray-700">
               Selected: {selectedConstraintIds.length} constraints, 
-              {selectedConditionIds.length} conditions
+              {selectedConditionIds.length} conditions, 
+              {selectedStpFileIds.length} STP files
             </span>
           </div>
           <button 
@@ -447,4 +688,23 @@ export default function DataSelectionPart({
 
 export function hasSelectedData(datasets: Dataset[]): boolean {
   return datasets.length > 0;
+}
+
+export function getDatasetFormat(dataset: Dataset): string {
+  if (dataset.format) return dataset.format;
+  if (dataset.fileType === 'shp') return 'Vector';
+  if (['tif', 'tiff'].includes(dataset.fileType || '')) return 'Raster';
+  return 'Other';
+}
+
+export function getDatasetIcon(fileType?: string): string {
+  switch(fileType?.toLowerCase()) {
+    case 'shp':
+      return '📊';
+    case 'tif':
+    case 'tiff':
+      return '🗺️';
+    default:
+      return '📄';
+  }
 }
