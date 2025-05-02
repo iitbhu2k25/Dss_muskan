@@ -1,15 +1,31 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
-import { Dataset } from './DataSelection';
+import { useState, useRef } from 'react';
+import InterpolationStep from './InterpolationStep';
+import ProjectionStep from './ProjectionStep';
+import ResamplingStep from './ResamplingStep';
+import ReclassificationStep from './ReclassificationStep';
+import NormalizationStep from './NormalizationStep';
 
-interface ProcessingProps {
+// Shared interfaces
+export interface Dataset {
+  id: string;
+  name: string;
+  fileType?: string;
+  format?: string;
+  coordinateSystem?: string;
+  resolution?: string;
+  type: string;
+  isUserUploaded?: boolean;
+}
+
+export interface ProcessingProps {
   selectedDatasets: Dataset[];
   selectedConstraints: string[];
   savedInterpolationData?: SavedInterpolationData[];
 }
 
-interface SavedInterpolationData {
+export interface SavedInterpolationData {
   fileName: string;
   dataset: Dataset | null;
   interpolationMethod: string;
@@ -17,54 +33,42 @@ interface SavedInterpolationData {
   projection?: string;
 }
 
-interface ProcessedData {
+export interface ProcessedData {
   fileName: string;
   dataset: Dataset | null;
   process: string;
   projection: string;
 }
 
-export default function ProcessingPart({ selectedDatasets, selectedConstraints, savedInterpolationData = [] }: ProcessingProps) {
+interface ProcessingPartProps {
+  selectedDatasets: Dataset[];
+  selectedConstraints: string[];
+}
+
+export default function ProcessingPart({ selectedDatasets, selectedConstraints }: ProcessingPartProps) {
   const [currentStep, setCurrentStep] = useState<number>(1);
-  const [projectionSystem, setProjectionSystem] = useState<string>('');
-  const [gridSizeX, setGridSizeX] = useState<number | undefined>(undefined);
-  const [gridSizeY, setGridSizeY] = useState<number | undefined>(undefined);
-  const [resamplingMethod, setResamplingMethod] = useState<string>('');
-  const [resampleGridSizeX, setResampleGridSizeX] = useState<number | undefined>(undefined);
-  const [resampleGridSizeY, setResampleGridSizeY] = useState<number | undefined>(undefined);
-  const [classificationClasses, setClassificationClasses] = useState<number | undefined>(undefined);
-  const [reclassificationTable, setReclassificationTable] = useState<{ oldValue: string; newValue: string }[]>([]);
-  const [normalizationMethod, setNormalizationMethod] = useState<string>('');
   const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
   const [stepProcessedData, setStepProcessedData] = useState<{ [key: number]: ProcessedData[] }>({});
   const [currentSelectedDataset, setCurrentSelectedDataset] = useState<Dataset | null>(null);
+  const [interpolatedData, setInterpolatedData] = useState<ProcessedData[]>([]);
 
   // References for each step section
   const step1Ref = useRef<HTMLDivElement>(null);
   const step2Ref = useRef<HTMLDivElement>(null);
   const step3Ref = useRef<HTMLDivElement>(null);
   const step4Ref = useRef<HTMLDivElement>(null);
+  const step5Ref = useRef<HTMLDivElement>(null);
 
   // Define steps for navigation
   const steps = [
-    { id: 1, name: 'Projection', ref: step1Ref },
-    { id: 2, name: 'Resampling', ref: step2Ref },
-    { id: 3, name: 'Reclassification', ref: step3Ref },
-    { id: 4, name: 'Normalization', ref: step4Ref },
+    { id: 1, name: 'Interpolation', ref: step1Ref },
+    { id: 2, name: 'Projection', ref: step2Ref },
+    { id: 3, name: 'Resampling', ref: step3Ref },
+    { id: 4, name: 'Reclassification', ref: step4Ref },
+    { id: 5, name: 'Normalization', ref: step5Ref },
   ];
 
-  // Sample constraint data for display
-  const constraints = [
-    { id: 'water', name: 'Water Bodies', color: 'blue' },
-    { id: 'roads', name: 'Roads', color: 'gray' },
-    { id: 'protected', name: 'Protected Areas', color: 'green' },
-    { id: 'slope', name: 'Steep Slopes', color: 'brown' },
-  ];
-
-  // Filter constraints based on selected IDs
-  const activeConstraints = constraints.filter((c) => selectedConstraints.includes(c.id));
-
-  // Helper functions for STP files table
+  // Helper functions for the selected datasets table
   const getFileIcon = (fileType?: string) => {
     switch (fileType?.toLowerCase()) {
       case 'shp':
@@ -93,81 +97,18 @@ export default function ProcessingPart({ selectedDatasets, selectedConstraints, 
     return file.resolution || 'Not specified';
   };
 
-  // Filter STP files from selectedDatasets
-  const stpFiles = selectedDatasets.filter((dataset) => dataset.type === 'stp_files');
-  const otherDatasets = selectedDatasets.filter((dataset) => dataset.type !== 'stp_files');
-
-  // Render STP Files Table
-  const renderStpFilesTable = (files: Dataset[]) => {
-    return (
-      <div className="overflow-x-auto max-h-60 overflow-y-auto border rounded-md">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50 sticky top-0">
-            <tr>
-              <th scope="col" className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                File
-              </th>
-              <th scope="col" className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Format
-              </th>
-              <th scope="col" className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Coordinate
-              </th>
-              <th scope="col" className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Resolution
-              </th>
-              
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {files.length === 0 ? (
-              <tr>
-                <td colSpan={4} className="px-3 py-3 text-gray-500 text-sm text-center">
-                  No STP files selected
-                </td>
-              </tr>
-            ) : (
-              files.map((file) => (
-                <tr key={file.id} className="hover:bg-gray-100">
-                  <td className="px-3 py-3 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <span className="mr-2">{getFileIcon(file.fileType)}</span>
-                      <span className="font-medium text-gray-700">{file.name}</span>
-                      {file.isUserUploaded && (
-                        <span className="ml-2 px-2 py-0.5 bg-blue-100 text-blue-800 text-xs rounded">Uploaded</span>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-700">
-                    {getFormatDisplay(file)}
-                  </td>
-                  <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-700">
-                    {getCoordinateDisplay(file)}
-                  </td>
-                  <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-700">
-                    {getResolutionDisplay(file)}
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
-    );
-  };
-
-  // Update reclassification table based on classificationClasses
-  useEffect(() => {
-    if (classificationClasses !== undefined && classificationClasses >= 2 && classificationClasses <= 10) {
-      const newTable = Array.from({ length: classificationClasses }, () => ({
-        oldValue: '',
-        newValue: '',
-      }));
-      setReclassificationTable(newTable);
-    } else {
-      setReclassificationTable([]);
+  const getCategoryDisplay = (type: string) => {
+    switch (type) {
+      case 'constraints_factors':
+        return 'Constraint';
+      case 'conditioning_factors':
+        return 'Conditioning';
+      case 'stp_files':
+        return 'STP File';
+      default:
+        return 'Other';
     }
-  }, [classificationClasses]);
+  };
 
   // Handle step navigation click
   const handleStepClick = (stepId: number) => {
@@ -179,57 +120,7 @@ export default function ProcessingPart({ selectedDatasets, selectedConstraints, 
   };
 
   // Handle Proceed button for each step
-  const handleProceed = (currentStep: number, nextStep: number) => {
-    // Validation for current step
-    if (currentStep === 1) {
-      if (!projectionSystem) {
-        alert('Please select a coordinate system.');
-        return;
-      }
-      if (gridSizeX === undefined || gridSizeY === undefined) {
-        alert('Please enter grid sizes for X and Y.');
-        return;
-      }
-    } else if (currentStep === 2) {
-      if (!resamplingMethod) {
-        alert('Please select a resampling method.');
-        return;
-      }
-      if (resampleGridSizeX === undefined || resampleGridSizeY === undefined) {
-        alert('Please enter grid sizes for X and Y.');
-        return;
-      }
-    } else if (currentStep === 3) {
-      if (classificationClasses === undefined || classificationClasses < 2) {
-        alert('Please enter a valid number of classes (minimum 2).');
-        return;
-      }
-      if (reclassificationTable.some((row) => !row.oldValue || !row.newValue)) {
-        alert('Please fill all old and new values in the reclassification table.');
-        return;
-      }
-    } else if (currentStep === 4) {
-      if (!normalizationMethod) {
-        alert('Please select a normalization method.');
-        return;
-      }
-    }
-
-    const newProcessedData: ProcessedData[] = [
-      ...selectedDatasets.map((dataset) => ({
-        fileName: dataset.name,
-        dataset,
-        process: getProcessName(currentStep),
-        projection: projectionSystem || 'EPSG:4326',
-      })),
-      ...savedInterpolationData.map((data) => ({
-        fileName: data.fileName,
-        dataset: data.dataset,
-        process: getProcessName(currentStep),
-        projection: data.projection || projectionSystem || 'EPSG:4326',
-      })),
-    ];
-
+  const handleProceed = (currentStep: number, nextStep: number, newProcessedData: ProcessedData[]) => {
     // Update step-specific processed data
     setStepProcessedData((prev) => ({
       ...prev,
@@ -249,33 +140,68 @@ export default function ProcessingPart({ selectedDatasets, selectedConstraints, 
     }
   };
 
-  // Handle Display button for Reclassification
-  const handleDisplay = () => {
-    alert('Display functionality to be implemented.');
-    // Placeholder for actual display logic
-  };
-
-  // Get process name for table title
-  const getProcessName = (step: number) => {
-    switch (step) {
+  // Render the current step component
+  const renderStepComponent = () => {
+    switch (currentStep) {
       case 1:
-        return 'Projection Completed';
+        return (
+          <InterpolationStep
+            stepRef={step1Ref}
+            selectedDatasets={selectedDatasets}
+            interpolatedData={interpolatedData}
+            setInterpolatedData={setInterpolatedData}
+            handleProceed={handleProceed}
+            stepProcessedData={stepProcessedData[1] || []}
+            currentSelectedDataset={currentSelectedDataset}
+          />
+        );
       case 2:
-        return 'Resampling Completed';
+        return (
+          <ProjectionStep
+            stepRef={step2Ref}
+            selectedDatasets={selectedDatasets}
+            interpolatedData={interpolatedData}
+            handleProceed={handleProceed}
+            stepProcessedData={stepProcessedData[2] || []}
+            currentSelectedDataset={currentSelectedDataset}
+          />
+        );
       case 3:
-        return 'Reclassification Completed';
+        return (
+          <ResamplingStep
+            stepRef={step3Ref}
+            selectedDatasets={selectedDatasets}
+            interpolatedData={interpolatedData}
+            handleProceed={handleProceed}
+            stepProcessedData={stepProcessedData[3] || []}
+            currentSelectedDataset={currentSelectedDataset}
+          />
+        );
       case 4:
-        return 'Normalization Completed';
+        return (
+          <ReclassificationStep
+            stepRef={step4Ref}
+            selectedDatasets={selectedDatasets}
+            interpolatedData={interpolatedData}
+            handleProceed={handleProceed}
+            stepProcessedData={stepProcessedData[4] || []}
+            currentSelectedDataset={currentSelectedDataset}
+          />
+        );
+      case 5:
+        return (
+          <NormalizationStep
+            stepRef={step5Ref}
+            selectedDatasets={selectedDatasets}
+            interpolatedData={interpolatedData}
+            handleProceed={handleProceed}
+            stepProcessedData={stepProcessedData[5] || []}
+            currentSelectedDataset={currentSelectedDataset}
+          />
+        );
       default:
-        return '';
+        return null;
     }
-  };
-
-  // Handle reclassification table updates
-  const updateReclassificationTable = (index: number, field: 'oldValue' | 'newValue', value: string) => {
-    const updatedTable = [...reclassificationTable];
-    updatedTable[index][field] = value;
-    setReclassificationTable(updatedTable);
   };
 
   return (
@@ -288,26 +214,116 @@ export default function ProcessingPart({ selectedDatasets, selectedConstraints, 
         </div>
       ) : (
         <>
-          {/* Datasets & Constraints Section */}
+          {/* Selected Datasets Section */}
           <div className="mb-4">
-            <h3 className="font-medium mb-2 text-gray-700">Datasets & Constraints</h3>
-            <div className="grid grid-cols-2 gap-2">
-              <div className="bg-gray-50 p-3 rounded-md max-h-60 overflow-y-auto">
-                <p className="text-sm font-medium mb-1 text-gray-600">Selected STP Files</p>
-                {renderStpFilesTable(stpFiles)}
-                {otherDatasets.length > 0 && (
-                  <>
-                    <p className="text-sm font-medium mt-3 mb-1 text-gray-600">Other Datasets</p>
-                    {otherDatasets.map((dataset) => (
-                      <div key={dataset.id} className="flex items-center mb-1">
-                        <div className="w-3 h-3 rounded-full bg-blue-500 mr-2"></div>
-                        <span className="text-sm">{dataset.name}</span>
-                      </div>
-                    ))}
-                  </>
-                )}
-              </div>
-              
+            <h3 className="font-medium mb-2 text-gray-700">Selected Datasets</h3>
+            <div className="overflow-x-auto max-h-60 overflow-y-auto border rounded-md">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50 sticky top-0">
+                  <tr>
+                    <th scope="col" className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      File
+                    </th>
+                    <th scope="col" className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Category
+                    </th>
+                    <th scope="col" className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Format
+                    </th>
+                    <th scope="col" className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Coordinate
+                    </th>
+                    <th scope="col" className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Resolution
+                    </th>
+                    <th scope="col" className="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Resampling
+                    </th>
+                    <th scope="col" className="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Reclassify
+                    </th>
+                    <th scope="col" className="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Normalization
+                    </th>
+                    <th scope="col" className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Remarks
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {selectedDatasets.length === 0 ? (
+                    <tr>
+                      <td colSpan={9} className="px-3 py-3 text-gray-500 text-sm text-center">
+                        No datasets selected
+                      </td>
+                    </tr>
+                  ) : (
+                    selectedDatasets.map((dataset) => (
+                      <tr key={dataset.id} className="hover:bg-gray-100">
+                        <td className="px-3 py-3 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <span className="mr-2">{getFileIcon(dataset.fileType)}</span>
+                            <span className="font-medium text-gray-700">{dataset.name}</span>
+                            {dataset.isUserUploaded && (
+                              <span className="ml-2 px-2 py-0.5 bg-blue-100 text-blue-800 text-xs rounded">Uploaded</span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-3 py-3 whitespace-nowrap text-sm">
+                          <span
+                            className={
+                              dataset.type === 'constraints_factors'
+                                ? 'text-red-600'
+                                : dataset.type === 'conditioning_factors'
+                                ? 'text-purple-600'
+                                : 'text-blue-600'
+                            }
+                          >
+                            {getCategoryDisplay(dataset.type)}
+                          </span>
+                        </td>
+                        <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-700">
+                          {getFormatDisplay(dataset)}
+                        </td>
+                        <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-700">
+                          {getCoordinateDisplay(dataset)}
+                        </td>
+                        <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-700">
+                          {getResolutionDisplay(dataset)}
+                        </td>
+                        <td className="px-3 py-3 whitespace-nowrap text-sm text-center">
+                          {completedSteps.has(3) && stepProcessedData[3]?.some((data) => data.dataset?.id === dataset.id) ? (
+                            <span className="text-green-600 text-lg">✓</span>
+                          ) : (
+                            <span className="text-gray-400 text-lg">✗</span>
+                          )}
+                        </td>
+                        <td className="px-3 py-3 whitespace-nowrap text-sm text-center">
+                          {completedSteps.has(4) && stepProcessedData[4]?.some((data) => data.dataset?.id === dataset.id) ? (
+                            <span className="text-green-600 text-lg">✓</span>
+                          ) : (
+                            <span className="text-gray-400 text-lg">✗</span>
+                          )}
+                        </td>
+                        <td className="px-3 py-3 whitespace-nowrap text-sm text-center">
+                          {completedSteps.has(5) && stepProcessedData[5]?.some((data) => data.dataset?.id === dataset.id) ? (
+                            <span className="text-green-600 text-lg">✓</span>
+                          ) : (
+                            <span className="text-gray-400 text-lg">✗</span>
+                          )}
+                        </td>
+                        <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-700">
+                          {dataset.format === 'Vector' || dataset.fileType === 'shp' ? (
+                            <span className="text-amber-600 font-medium">Do Interpolation first, then process</span>
+                          ) : (
+                            <span className="text-green-600 font-medium">Go for all processing</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
             </div>
           </div>
 
@@ -338,310 +354,8 @@ export default function ProcessingPart({ selectedDatasets, selectedConstraints, 
             </p>
           </div>
 
-          {/* Step 1: Projection */}
-          <div ref={step1Ref} className="mb-4">
-            <h3 className="font-medium mb-2 text-gray-700">Step 1: Projection</h3>
-            <div className="bg-gray-50 p-4 rounded-md border border-gray-300">
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Coordinate System</label>
-                <select
-                  value={projectionSystem}
-                  onChange={(e) => setProjectionSystem(e.target.value)}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
-                >
-                  <option value="">Select...</option>
-                  <option value="EPSG:4326">WGS 84 (EPSG:4326)</option>
-                  <option value="EPSG:3857">Web Mercator (EPSG:3857)</option>
-                  <option value="EPSG:3395">World Mercator (EPSG:3395)</option>
-                  <option value="EPSG:32633">UTM Zone 33N (EPSG:32633)</option>
-                </select>
-              </div>
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Grid Size X (meters)</label>
-                <input
-                  type="number"
-                  value={gridSizeX ?? ''}
-                  onChange={(e) => setGridSizeX(e.target.value ? parseInt(e.target.value) : undefined)}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
-                  min="10"
-                  step="10"
-                  placeholder="Enter grid size X"
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Grid Size Y (meters)</label>
-                <input
-                  type="number"
-                  value={gridSizeY ?? ''}
-                  onChange={(e) => setGridSizeY(e.target.value ? parseInt(e.target.value) : undefined)}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
-                  min="10"
-                  step="10"
-                  placeholder="Enter grid size Y"
-                />
-              </div>
-              <button
-                className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
-                onClick={() => handleProceed(1, 2)}
-              >
-                Proceed
-              </button>
-            </div>
-            {completedSteps.has(1) && stepProcessedData[1]?.length > 0 && (
-              <div className="mt-4">
-                <h4 className="text-sm font-semibold mb-2 text-gray-700">{getProcessName(1)}</h4>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm text-left text-gray-700 border border-gray-300">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-4 py-2 border">File Name</th>
-                        <th className="px-4 py-2 border">Dataset</th>
-                        <th className="px-4 py-2 border">Process</th>
-                        <th className="px-4 py-2 border">Projection</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {stepProcessedData[1]
-                        .filter((data) => !currentSelectedDataset || data.dataset?.id !== currentSelectedDataset.id)
-                        .map((data, index) => (
-                          <tr key={`processed-1-${index}`} className="hover:bg-gray-100">
-                            <td className="px-4 py-2 border">{data.fileName}</td>
-                            <td className="px-4 py-2 border">{data.dataset?.name || 'None'}</td>
-                            <td className="px-4 py-2 border">{data.process}</td>
-                            <td className="px-4 py-2 border">{data.projection}</td>
-                          </tr>
-                        ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Step 2: Resampling */}
-          <div ref={step2Ref} className="mb-4">
-            <h3 className="font-medium mb-2 text-gray-700">Step 2: Resampling</h3>
-            <div className="bg-gray-50 p-4 rounded-md border border-gray-300">
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Resampling Method</label>
-                <select
-                  value={resamplingMethod}
-                  onChange={(e) => setResamplingMethod(e.target.value)}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
-                >
-                  <option value="">Select...</option>
-                  <option value="nearest">Nearest Neighbor</option>
-                  <option value="bilinear">Bilinear</option>
-                  <option value="cubic">Cubic</option>
-                </select>
-              </div>
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Grid Size X (meters)</label>
-                <input
-                  type="number"
-                  value={resampleGridSizeX ?? ''}
-                  onChange={(e) => setResampleGridSizeX(e.target.value ? parseInt(e.target.value) : undefined)}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
-                  min="10"
-                  step="10"
-                  placeholder="Enter grid size X"
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Grid Size Y (meters)</label>
-                <input
-                  type="number"
-                  value={resampleGridSizeY ?? ''}
-                  onChange={(e) => setResampleGridSizeY(e.target.value ? parseInt(e.target.value) : undefined)}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
-                  min="10"
-                  step="10"
-                  placeholder="Enter grid size Y"
-                />
-              </div>
-              <button
-                className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
-                onClick={() => handleProceed(2, 3)}
-              >
-                Proceed
-              </button>
-            </div>
-            {completedSteps.has(2) && stepProcessedData[2]?.length > 0 && (
-              <div className="mt-4">
-                <h4 className="text-sm font-semibold mb-2 text-gray-700">{getProcessName(2)}</h4>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm text-left text-gray-700 border border-gray-300">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-4 py-2 border">File Name</th>
-                        <th className="px-4 py-2 border">Dataset</th>
-                        <th className="px-4 py-2 border">Process</th>
-                        <th className="px-4 py-2 border">Projection</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {stepProcessedData[2]
-                        .filter((data) => !currentSelectedDataset || data.dataset?.id !== currentSelectedDataset.id)
-                        .map((data, index) => (
-                          <tr key={`processed-2-${index}`} className="hover:bg-gray-100">
-                            <td className="px-4 py-2 border">{data.fileName}</td>
-                            <td className="px-4 py-2 border">{data.dataset?.name || 'None'}</td>
-                            <td className="px-4 py-2 border">{data.process}</td>
-                            <td className="px-4 py-2 border">{data.projection}</td>
-                          </tr>
-                        ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Step 3: Reclassification */}
-          <div ref={step3Ref} className="mb-4">
-            <h3 className="font-medium mb-2 text-gray-700">Step 3: Reclassification</h3>
-            <div className="bg-gray-50 p-4 rounded-md border border-gray-300">
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Number of Classes</label>
-                <input
-                  type="number"
-                  value={classificationClasses ?? ''}
-                  onChange={(e) => setClassificationClasses(e.target.value ? parseInt(e.target.value) : undefined)}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
-                  min="2"
-                  max="10"
-                  placeholder="Enter number of classes"
-                />
-              </div>
-              {reclassificationTable.length > 0 && (
-                <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Reclassification Table</label>
-                  <div className="border border-gray-300 rounded-md p-2">
-                    <div className="grid grid-cols-2 gap-2 mb-2">
-                      <span className="text-sm font-medium text-gray-600">Old Value</span>
-                      <span className="text-sm font-medium text-gray-600">New Value</span>
-                    </div>
-                    {reclassificationTable.map((row, index) => (
-                      <div key={index} className="grid grid-cols-2 gap-2 mb-2">
-                        <input
-                          type="text"
-                          value={row.oldValue}
-                          onChange={(e) => updateReclassificationTable(index, 'oldValue', e.target.value)}
-                          className="border border-gray-300 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
-                          placeholder="Old Value"
-                        />
-                        <input
-                          type="text"
-                          value={row.newValue}
-                          onChange={(e) => updateReclassificationTable(index, 'newValue', e.target.value)}
-                          className="border border-gray-300 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
-                          placeholder="New Value"
-                        />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-              <div className="flex gap-2">
-                <button
-                  className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
-                  onClick={() => handleProceed(3, 4)}
-                >
-                  Proceed
-                </button>
-                <button
-                  className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                  onClick={handleDisplay}
-                >
-                  Display
-                </button>
-              </div>
-            </div>
-            {completedSteps.has(3) && stepProcessedData[3]?.length > 0 && (
-              <div className="mt-4">
-                <h4 className="text-sm font-semibold mb-2 text-gray-700">{getProcessName(3)}</h4>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm text-left text-gray-700 border border-gray-300">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-4 py-2 border">File Name</th>
-                        <th className="px-4 py-2 border">Dataset</th>
-                        <th className="px-4 py-2 border">Process</th>
-                        <th className="px-4 py-2 border">Projection</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {stepProcessedData[3]
-                        .filter((data) => !currentSelectedDataset || data.dataset?.id !== currentSelectedDataset.id)
-                        .map((data, index) => (
-                          <tr key={`processed-3-${index}`} className="hover:bg-gray-100">
-                            <td className="px-4 py-2 border">{data.fileName}</td>
-                            <td className="px-4 py-2 border">{data.dataset?.name || 'None'}</td>
-                            <td className="px-4 py-2 border">{data.process}</td>
-                            <td className="px-4 py-2 border">{data.projection}</td>
-                          </tr>
-                        ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Step 4: Normalization */}
-          <div ref={step4Ref} className="mb-4">
-            <h3 className="font-medium mb-2 text-gray-700">Step 4: Normalization</h3>
-            <div className="bg-gray-50 p-4 rounded-md border border-gray-300">
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Normalization Method</label>
-                <select
-                  value={normalizationMethod}
-                  onChange={(e) => setNormalizationMethod(e.target.value)}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
-                >
-                  <option value="">Select...</option>
-                  <option value="minmax">Min-Max</option>
-                  <option value="zscore">Z-Score</option>
-                  <option value="log">Logarithmic</option>
-                </select>
-              </div>
-              <button
-                className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
-                onClick={() => handleProceed(4, 4)}
-              >
-                Proceed
-              </button>
-            </div>
-            {completedSteps.has(4) && stepProcessedData[4]?.length > 0 && (
-              <div className="mt-4">
-                <h4 className="text-sm font-semibold mb-2 text-gray-700">{getProcessName(4)}</h4>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm text-left text-gray-700 border border-gray-300">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-4 py-2 border">File Name</th>
-                        <th className="px-4 py-2 border">Dataset</th>
-                        <th className="px-4 py-2 border">Process</th>
-                        <th className="px-4 py-2 border">Projection</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {stepProcessedData[4]
-                        .filter((data) => !currentSelectedDataset || data.dataset?.id !== currentSelectedDataset.id)
-                        .map((data, index) => (
-                          <tr key={`processed-4-${index}`} className="hover:bg-gray-100">
-                            <td className="px-4 py-2 border">{data.fileName}</td>
-                            <td className="px-4 py-2 border">{data.dataset?.name || 'None'}</td>
-                            <td className="px-4 py-2 border">{data.process}</td>
-                            <td className="px-4 py-2 border">{data.projection}</td>
-                          </tr>
-                        ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
-          </div>
+          {/* Render Current Step */}
+          {renderStepComponent()}
         </>
       )}
     </div>

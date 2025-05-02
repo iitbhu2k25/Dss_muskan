@@ -114,3 +114,4 @@ wheel==0.45.1
 whitenoise==6.9.0
 pykrige
 fiona
+simpledbf

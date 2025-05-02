@@ -5,10 +5,10 @@ import React, { useState, useEffect } from 'react';
 export interface Dataset {
   id: string;
   name: string;
-  type: string; // 'constraints' or 'conditions' or 'stp_files'
+  type: string; // 'constraints_factors' or 'conditioning_factors' or 'stp_files'
   description: string;
   isUserUploaded?: boolean;
-  fileType?: string; // For STP files: 'shp', 'tif', 'tiff'
+  fileType?: string; // 'shp', 'tif', 'tiff'
   format?: string; // 'Raster' or 'Vector'
   coordinateSystem?: string; // e.g., 'EPSG:4326'
   resolution?: string; // e.g., '30m x 30m'
@@ -17,85 +17,77 @@ export interface Dataset {
 interface DataSelectionProps {
   onSelectDatasets: (datasets: Dataset[]) => void;
   onConstraintsChange?: (constraintIds: string[]) => void;
-  onConditionsChange?: (conditionIds: string[]) => void;
-  onStpFilesChange?: (stpFileIds: string[]) => void;
+  onConditionsChange?: (conditioningIds: string[]) => void;
 }
 
 export default function DataSelectionPart({ 
   onSelectDatasets, 
   onConstraintsChange, 
   onConditionsChange,
-  onStpFilesChange
 }: DataSelectionProps) {
-  // Sample existing data
-  const existingConstraints: Dataset[] = [
-    { id: 'water', name: 'Water Bodies', type: 'constraints', description: 'Areas with water bodies' },
-    { id: 'roads', name: 'Roads', type: 'constraints', description: 'Areas near major roads' },
-    { id: 'prone', name: 'Flood Prone Area', type: 'constraints', description: 'Prone Areas' },
-    { id: 'slope', name: 'Steep Slopes', type: 'constraints', description: 'Areas with slope > 15%' },
-    { id: 'forest', name: 'Forest', type: 'constraints', description: 'Forest > 15%' },
-    { id: 'GWD', name: 'Ground Water Depth', type: 'constraints', description: 'Areas with low ground water depth' },
-    { id: 'airport', name: 'Airport', type: 'constraints', description: ' Areas near airports ' },
-    { id: 'asi sites', name: 'ASI Sites', type: 'constraints', description: 'Areas near ASI sites' },
-    { id: 'soiltexture', name: 'Soil Texture', type: 'constraints', description: 'Areas with specific soil texture' },
-    { id: 'wetland', name: 'Wetland', type: 'constraints', description: ' Areas with wetland' },
-    { id: 'existingSTPs', name: 'Existing STPs', type: 'constraints', description: 'Areas with existing STPs' },
-    { id: 'builduparea', name: 'Buildup Areas', type: 'constraints', description: ' Areas with buildup areas  ' },
-  ];
-  
-  const existingConditions: Dataset[] = [
-    { id: 'elevation', name: 'Elevation', type: 'conditions', description: 'Higher elevation areas' },
-    { id: 'soilQuality', name: 'Soil Quality', type: 'conditions', description: 'Areas with good soil quality' },
-    { id: 'slopeGentle', name: 'Slope', type: 'conditions', description: 'Areas with gentle slopes' },
-    { id: 'lithology', name: 'Lithology', type: 'conditions', description: 'Areas with specific lithology' },
-    { id: 'distancfrombuildupland', name: 'Distance from Buildup Land', type: 'conditions', description: 'Areas with specific distance from buildup land' },
-    { id: 'geomorphology', name: 'Geomorphology', type: 'conditions', description: 'Areas with specific geomorphology' },
-    { id: 'lulc', name: 'Land Use/Land Cover', type: 'conditions', description: 'Areas with specific land use/land cover' },
-    { id: 'populationdensity', name: 'Population Density', type: 'conditions', description: 'Areas with specific population density' },
-    { id: 'groundwaterquality', name: 'Groundwater Quality', type: 'conditions', description: 'Areas with specific groundwater quality' },
-    { id: 'drains', name: 'Drains', type: 'conditions', description: 'Areas with specific drains' },
-  ];
-  
   // State
   const [dataSource, setDataSource] = useState<'existing' | 'upload'>('existing');
   const [selectedConstraintIds, setSelectedConstraintIds] = useState<string[]>([]);
-  const [selectedConditionIds, setSelectedConditionIds] = useState<string[]>([]);
-  const [selectedStpFileIds, setSelectedStpFileIds] = useState<string[]>([]);
+  const [selectedConditioningIds, setSelectedConditioningIds] = useState<string[]>([]);
   const [uploadedDatasets, setUploadedDatasets] = useState<Dataset[]>([]);
-  const [uploadCategory, setUploadCategory] = useState<'constraints' | 'conditions' | 'stp_files'>('constraints');
+  const [uploadCategory, setUploadCategory] = useState<'constraints_factors' | 'conditioning_factors'>('constraints_factors');
   const [fileInput, setFileInput] = useState<string>('');
   const [showValidationPopup, setShowValidationPopup] = useState<boolean>(false);
-  const [stpFiles, setStpFiles] = useState<Dataset[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isLoadingConstraints, setIsLoadingConstraints] = useState<boolean>(true);
+  const [isLoadingConditioning, setIsLoadingConditioning] = useState<boolean>(true);
+  const [constraintsFiles, setConstraintsFiles] = useState<Dataset[]>([]);
+  const [conditioningFiles, setConditioningFiles] = useState<Dataset[]>([]);
   
   // Combined datasets
-  const allConstraints = [...existingConstraints, ...uploadedDatasets.filter(d => d.type === 'constraints')];
-  const allConditions = [...existingConditions, ...uploadedDatasets.filter(d => d.type === 'conditions')];
-  const allStpFiles = [...stpFiles, ...uploadedDatasets.filter(d => d.type === 'stp_files')]
-    .filter(d => ['shp', 'tif', 'tiff'].includes(d.fileType?.toLowerCase() || ''));
+  const allConstraints = [...constraintsFiles, ...uploadedDatasets.filter(d => d.type === 'constraints_factors')];
+  const allConditioning = [...conditioningFiles, ...uploadedDatasets.filter(d => d.type === 'conditioning_factors')];
 
-  // Fetch STP files from backend
+  // Fetch constraints files from backend
   useEffect(() => {
-    const fetchStpFiles = async () => {
+    const fetchConstraintsFiles = async () => {
       try {
-        setIsLoading(true);
-        const response = await fetch('http://localhost:9000/api/stp_suitability/stp-files/');
+        setIsLoadingConstraints(true);
+        const response = await fetch('http://localhost:9000/api/stp_suitability/constraints-factors/');
         if (!response.ok) {
-          throw new Error('Failed to fetch STP files');
+          throw new Error('Failed to fetch constraints files');
         }
         const data = await response.json();
-        const filteredStpFiles = data.filter((file: Dataset) =>
+        const filteredFiles = data.filter((file: Dataset) =>
           ['shp', 'tif', 'tiff'].includes(file.fileType?.toLowerCase() || '')
         );
-        setStpFiles(filteredStpFiles);
+        setConstraintsFiles(filteredFiles);
       } catch (error) {
-        console.error('Error fetching STP files:', error);
+        console.error('Error fetching constraints files:', error);
       } finally {
-        setIsLoading(false);
+        setIsLoadingConstraints(false);
       }
     };
     
-    fetchStpFiles();
+    fetchConstraintsFiles();
+  }, []);
+  
+  // Fetch conditioning files from backend
+  useEffect(() => {
+    const fetchConditioningFiles = async () => {
+      try {
+        setIsLoadingConditioning(true);
+        const response = await fetch('http://localhost:9000/api/stp_suitability/conditioning-factors/');
+        if (!response.ok) {
+          throw new Error('Failed to fetch conditioning files');
+        }
+        const data = await response.json();
+        const filteredFiles = data.filter((file: Dataset) =>
+          ['shp', 'tif', 'tiff'].includes(file.fileType?.toLowerCase() || '')
+        );
+        setConditioningFiles(filteredFiles);
+      } catch (error) {
+        console.error('Error fetching conditioning files:', error);
+      } finally {
+        setIsLoadingConditioning(false);
+      }
+    };
+    
+    fetchConditioningFiles();
   }, []);
   
   // Handlers
@@ -105,35 +97,24 @@ export default function DataSelectionPart({
       : [...selectedConstraintIds, id];
     
     setSelectedConstraintIds(newSelection);
-    updateSelectedDatasets(newSelection, selectedConditionIds, selectedStpFileIds);
+    updateSelectedDatasets(newSelection, selectedConditioningIds);
     onConstraintsChange?.(newSelection);
   };
   
-  const handleConditionToggle = (id: string) => {
-    const newSelection = selectedConditionIds.includes(id)
-      ? selectedConditionIds.filter(conditionId => conditionId !== id)
-      : [...selectedConditionIds, id];
+  const handleConditioningToggle = (id: string) => {
+    const newSelection = selectedConditioningIds.includes(id)
+      ? selectedConditioningIds.filter(conditioningId => conditioningId !== id)
+      : [...selectedConditioningIds, id];
     
-    setSelectedConditionIds(newSelection);
-    updateSelectedDatasets(selectedConstraintIds, newSelection, selectedStpFileIds);
+    setSelectedConditioningIds(newSelection);
+    updateSelectedDatasets(selectedConstraintIds, newSelection);
     onConditionsChange?.(newSelection);
   };
-
-  const handleStpFileToggle = (id: string) => {
-    const newSelection = selectedStpFileIds.includes(id)
-      ? selectedStpFileIds.filter(stpFileId => stpFileId !== id)
-      : [...selectedStpFileIds, id];
-    
-    setSelectedStpFileIds(newSelection);
-    updateSelectedDatasets(selectedConstraintIds, selectedConditionIds, newSelection);
-    onStpFilesChange?.(newSelection);
-  };
   
-  const updateSelectedDatasets = (constraintIds: string[], conditionIds: string[], stpFileIds: string[]) => {
+  const updateSelectedDatasets = (constraintIds: string[], conditioningIds: string[]) => {
     const selectedConstraints = allConstraints.filter(dataset => constraintIds.includes(dataset.id));
-    const selectedConditions = allConditions.filter(dataset => conditionIds.includes(dataset.id));
-    const selectedStpFiles = allStpFiles.filter(dataset => stpFileIds.includes(dataset.id));
-    onSelectDatasets([...selectedConstraints, ...selectedConditions, ...selectedStpFiles]);
+    const selectedConditioning = allConditioning.filter(dataset => conditioningIds.includes(dataset.id));
+    onSelectDatasets([...selectedConstraints, ...selectedConditioning]);
   };
   
   const handleFileUpload = (e: React.FormEvent) => {
@@ -142,8 +123,8 @@ export default function DataSelectionPart({
     if (fileInput.trim() === '') return;
     
     const fileExtension = fileInput.split('.').pop()?.toLowerCase();
-    if (uploadCategory === 'stp_files' && !['shp', 'tif', 'tiff'].includes(fileExtension || '')) {
-      alert('Only .shp and .tif/.tiff files are allowed for STP Files.');
+    if (!['shp', 'tif', 'tiff'].includes(fileExtension || '')) {
+      alert('Only .shp and .tif/.tiff files are allowed.');
       return;
     }
     
@@ -171,20 +152,19 @@ export default function DataSelectionPart({
     setFileInput('');
   };
 
-  const handleApplySelection = () => {
-    if (selectedConstraintIds.length === 0 && selectedConditionIds.length === 0 && selectedStpFileIds.length === 0) {
+  const handleDisplaySelection = () => {
+    if (selectedConstraintIds.length === 0 && selectedConditioningIds.length === 0) {
       setShowValidationPopup(true);
     } else {
-      console.log('Selection applied:', {
+      console.log('Selection displayed:', {
         constraints: allConstraints.filter(c => selectedConstraintIds.includes(c.id)),
-        conditions: allConditions.filter(c => selectedConditionIds.includes(c.id)),
-        stpFiles: allStpFiles.filter(f => selectedStpFileIds.includes(f.id))
+        conditioning: allConditioning.filter(c => selectedConditioningIds.includes(c.id))
       });
     }
   };
   
   const hasSelectedData = () => {
-    return selectedConstraintIds.length > 0 || selectedConditionIds.length > 0 || selectedStpFileIds.length > 0;
+    return selectedConstraintIds.length > 0 || selectedConditioningIds.length > 0;
   };
 
   const getFileIcon = (fileType?: string) => {
@@ -218,8 +198,20 @@ export default function DataSelectionPart({
     return file.resolution || 'Not specified';
   };
 
-  // Render STP Files as a table
-  const renderStpFilesTable = (files: Dataset[]) => {
+  // Get category display name
+  const getCategoryDisplay = (type: string) => {
+    switch(type) {
+      case 'constraints_factors':
+        return 'Constraint';
+      case 'conditioning_factors':
+        return 'Conditioning';
+      default:
+        return type;
+    }
+  };
+
+  // Render files as a table
+  const renderFilesTable = (files: Dataset[], selectedIds: string[], toggleHandler: (id: string) => void, type: string) => {
     return (
       <div className="overflow-x-auto max-h-60 overflow-y-auto border rounded-md">
         <table className="min-w-full divide-y divide-gray-200">
@@ -243,22 +235,22 @@ export default function DataSelectionPart({
             {files.length === 0 ? (
               <tr>
                 <td colSpan={4} className="px-3 py-3 text-gray-500 text-sm text-center">
-                  No STP files available
+                  No {type} files available
                 </td>
               </tr>
             ) : (
               files.map((file) => (
-                <tr key={file.id} className={selectedStpFileIds.includes(file.id) ? "bg-green-50" : ""}>
+                <tr key={file.id} className={selectedIds.includes(file.id) ? "bg-green-50" : ""}>
                   <td className="px-3 py-3 whitespace-nowrap">
                     <div className="flex items-start">
                       <input
                         type="checkbox"
-                        id={`stp-file-${file.id}`}
-                        checked={selectedStpFileIds.includes(file.id)}
-                        onChange={() => handleStpFileToggle(file.id)}
+                        id={`file-${file.id}`}
+                        checked={selectedIds.includes(file.id)}
+                        onChange={() => toggleHandler(file.id)}
                         className="h-4 w-4 mt-1 text-green-600 focus:ring-green-500 border-gray-300 rounded"
                       />
-                      <label htmlFor={`stp-file-${file.id}`} className="ml-3 cursor-pointer">
+                      <label htmlFor={`file-${file.id}`} className="ml-3 cursor-pointer">
                         <div className="flex items-center">
                           <span className="mr-2">{getFileIcon(file.fileType)}</span>
                           <span className="font-medium text-gray-700">{file.name}</span>
@@ -285,6 +277,13 @@ export default function DataSelectionPart({
         </table>
       </div>
     );
+  };
+
+  // Get all selected datasets for the combined table
+  const getAllSelectedDatasets = () => {
+    const selectedConstraints = allConstraints.filter(c => selectedConstraintIds.includes(c.id));
+    const selectedConditioning = allConditioning.filter(c => selectedConditioningIds.includes(c.id));
+    return [...selectedConstraints, ...selectedConditioning];
   };
 
   return (
@@ -320,82 +319,33 @@ export default function DataSelectionPart({
       {/* Existing Data Selection */}
       {dataSource === 'existing' && (
         <div className="mb-4">
-          <div>
+          <div className="mb-4">
             <h3 className="font-medium text-gray-700 mb-2">Conditioning Factors</h3>
-            <div className="divide-y divide-gray-200 max-h-60 overflow-y-auto border rounded-md">
-              {allConditions.length === 0 ? (
-                <div className="p-3 text-gray-500 text-sm">No conditions available</div>
-              ) : (
-                allConditions.map((condition) => (
-                  <div key={condition.id} className="py-3 px-3 flex items-start">
-                    <input
-                      type="checkbox"
-                      id={`condition-${condition.id}`}
-                      checked={selectedConditionIds.includes(condition.id)}
-                      onChange={() => handleConditionToggle(condition.id)}
-                      className="h-4 w-4 mt-1 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
-                    />
-                    <label htmlFor={`condition-${condition.id}`} className="ml-3 cursor-pointer">
-                      <div className="font-medium text-gray-700 flex items-center">
-                        {condition.name}
-                        {condition.isUserUploaded && (
-                          <span className="ml-2 px-2 py-0.5 bg-blue-100 text-blue-800 text-xs rounded">Uploaded</span>
-                        )}
-                      </div>
-                      <div className="text-xs text-gray-500 mt-0.5">
-                        {condition.description}
-                      </div>
-                    </label>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-          
-          <div className="mb-4 mt-4">
-            <h3 className="font-medium text-gray-700 mb-2">Constraints Factors</h3>
-            <div className="divide-y divide-gray-200 max-h-60 overflow-y-auto border rounded-md">
-              {allConstraints.length === 0 ? (
-                <div className="p-3 text-gray-500 text-sm">No constraints available</div>
-              ) : (
-                allConstraints.map((constraint) => (
-                  <div key={constraint.id} className="py-3 px-3 flex items-start">
-                    <input
-                      type="checkbox"
-                      id={`constraint-${constraint.id}`}
-                      checked={selectedConstraintIds.includes(constraint.id)}
-                      onChange={() => handleConstraintToggle(constraint.id)}
-                      className="h-4 w-4 mt-1 text-red-600 focus:ring-red-500 border-gray-300 rounded"
-                    />
-                    <label htmlFor={`constraint-${constraint.id}`} className="ml-3 cursor-pointer">
-                      <div className="font-medium text-gray-700 flex items-center">
-                        {constraint.name}
-                        {constraint.isUserUploaded && (
-                          <span className="ml-2 px-2 py-0.5 bg-blue-100 text-blue-800 text-xs rounded">Uploaded</span>
-                        )}
-                      </div>
-                      <div className="text-xs text-gray-500 mt-0.5">
-                        {constraint.description}
-                      </div>
-                    </label>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-
-          <div className="mb-4 mt-4">
-            <h3 className="font-medium text-gray-700 mb-2">STP Suitability Files</h3>
-            {isLoading ? (
+            {isLoadingConditioning ? (
               <div className="p-3 text-gray-500 text-sm flex items-center justify-center border rounded-md">
                 <svg className="animate-spin h-5 w-5 mr-3 text-cyan-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
-                Loading STP files...
+                Loading conditioning factors...
               </div>
             ) : (
-              renderStpFilesTable(allStpFiles)
+              renderFilesTable(allConditioning, selectedConditioningIds, handleConditioningToggle, "conditioning factors")
+            )}
+          </div>
+          
+          <div className="mb-4">
+            <h3 className="font-medium text-gray-700 mb-2">Constraints Factors</h3>
+            {isLoadingConstraints ? (
+              <div className="p-3 text-gray-500 text-sm flex items-center justify-center border rounded-md">
+                <svg className="animate-spin h-5 w-5 mr-3 text-cyan-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Loading constraints factors...
+              </div>
+            ) : (
+              renderFilesTable(allConstraints, selectedConstraintIds, handleConstraintToggle, "constraints factors")
             )}
           </div>
         </div>
@@ -415,8 +365,8 @@ export default function DataSelectionPart({
                     type="radio"
                     className="form-radio text-red-600"
                     name="uploadCategory"
-                    checked={uploadCategory === 'constraints'}
-                    onChange={() => setUploadCategory('constraints')}
+                    checked={uploadCategory === 'constraints_factors'}
+                    onChange={() => setUploadCategory('constraints_factors')}
                   />
                   <span className="ml-2">Constraints</span>
                 </label>
@@ -425,20 +375,10 @@ export default function DataSelectionPart({
                     type="radio"
                     className="form-radio text-purple-600"
                     name="uploadCategory"
-                    checked={uploadCategory === 'conditions'}
-                    onChange={() => setUploadCategory('conditions')}
+                    checked={uploadCategory === 'conditioning_factors'}
+                    onChange={() => setUploadCategory('conditioning_factors')}
                   />
-                  <span className="ml-2">Conditions</span>
-                </label>
-                <label className="inline-flex items-center">
-                  <input
-                    type="radio"
-                    className="form-radio text-green-600"
-                    name="uploadCategory"
-                    checked={uploadCategory === 'stp_files'}
-                    onChange={() => setUploadCategory('stp_files')}
-                  />
-                  <span className="ml-2">STP Files</span>
+                  <span className="ml-2">Conditioning</span>
                 </label>
               </div>
             </div>
@@ -452,7 +392,7 @@ export default function DataSelectionPart({
                   type="file"
                   className="hidden"
                   id="fileUpload"
-                  accept={uploadCategory === 'stp_files' ? '.shp,.tif,.tiff' : '*'}
+                  accept=".shp,.tif,.tiff"
                   onChange={(e) => e.target.files && setFileInput(e.target.files[0].name)}
                 />
                 <input
@@ -469,9 +409,7 @@ export default function DataSelectionPart({
                   Browse
                 </label>
               </div>
-              {uploadCategory === 'stp_files' && (
-                <p className="text-xs text-gray-500 mt-1">Only .shp and .tif/.tiff files are allowed</p>
-              )}
+              <p className="text-xs text-gray-500 mt-1">Only .shp and .tif/.tiff files are allowed</p>
             </div>
             
             <button
@@ -483,177 +421,95 @@ export default function DataSelectionPart({
             </button>
           </form>
           
-          <div>
+          <div className="mb-4">
             <h3 className="font-medium text-gray-700 mb-2">Conditioning Factors</h3>
-            <div className="divide-y divide-gray-200 max-h-60 overflow-y-auto border rounded-md">
-              {allConditions.length === 0 ? (
-                <div className="p-3 text-gray-500 text-sm">No conditions available</div>
-              ) : (
-                allConditions.map((condition) => (
-                  <div key={condition.id} className="py-3 px-3 flex items-start">
-                    <input
-                      type="checkbox"
-                      id={`upload-condition-${condition.id}`}
-                      checked={selectedConditionIds.includes(condition.id)}
-                      onChange={() => handleConditionToggle(condition.id)}
-                      className="h-4 w-4 mt-1 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
-                    />
-                    <label htmlFor={`upload-condition-${condition.id}`} className="ml-3 cursor-pointer">
-                      <div className="font-medium text-gray-700 flex items-center">
-                        {condition.name}
-                        {condition.isUserUploaded && (
-                          <span className="ml-2 px-2 py-0.5 bg-blue-100 text-blue-800 text-xs rounded">Uploaded</span>
-                        )}
-                      </div>
-                      <div className="text-xs text-gray-500 mt-0.5">
-                        {condition.description}
-                      </div>
-                    </label>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-
-          <div className="mb-4 mt-4">
-            <h3 className="font-medium text-gray-700 mb-2">Constraints Factors</h3>
-            <div className="divide-y divide-gray-200 max-h-60 overflow-y-auto border rounded-md">
-              {allConstraints.length === 0 ? (
-                <div className="p-3 text-gray-500 text-sm">No constraints available</div>
-              ) : (
-                allConstraints.map((constraint) => (
-                  <div key={constraint.id} className="py-3 px-3 flex items-start">
-                    <input
-                      type="checkbox"
-                      id={`upload-constraint-${constraint.id}`}
-                      checked={selectedConstraintIds.includes(constraint.id)}
-                      onChange={() => handleConstraintToggle(constraint.id)}
-                      className="h-4 w-4 mt-1 text-red-600 focus:ring-red-500 border-gray-300 rounded"
-                    />
-                    <label htmlFor={`upload-constraint-${constraint.id}`} className="ml-3 cursor-pointer">
-                      <div className="font-medium text-gray-700 flex items-center">
-                        {constraint.name}
-                        {constraint.isUserUploaded && (
-                          <span className="ml-2 px-2 py-0.5 bg-blue-100 text-blue-800 text-xs rounded">Uploaded</span>
-                        )}
-                      </div>
-                      <div className="text-xs text-gray-500 mt-0.5">
-                        {constraint.description}
-                      </div>
-                    </label>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-
-          <div className="mb-4 mt-4">
-            <h3 className="font-medium text-gray-700 mb-2">STP Suitability Files</h3>
-            {isLoading ? (
+            {isLoadingConditioning ? (
               <div className="p-3 text-gray-500 text-sm flex items-center justify-center border rounded-md">
                 <svg className="animate-spin h-5 w-5 mr-3 text-cyan-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
-                Loading STP files...
+                Loading conditioning factors...
               </div>
             ) : (
-              renderStpFilesTable(allStpFiles)
+              renderFilesTable(allConditioning, selectedConditioningIds, handleConditioningToggle, "conditioning factors")
+            )}
+          </div>
+
+          <div className="mb-4">
+            <h3 className="font-medium text-gray-700 mb-2">Constraints Factors</h3>
+            {isLoadingConstraints ? (
+              <div className="p-3 text-gray-500 text-sm flex items-center justify-center border rounded-md">
+                <svg className="animate-spin h-5 w-5 mr-3 text-cyan-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Loading constraints factors...
+              </div>
+            ) : (
+              renderFilesTable(allConstraints, selectedConstraintIds, handleConstraintToggle, "constraints factors")
             )}
           </div>
         </div>
       )}
       
-      {/* Selected Items Summary */}
+      {/* Selected Items Summary - Combined Table */}
       <div className="mt-6 bg-gray-50 p-3 rounded-md">
         <h3 className="font-medium text-gray-700 mb-2">Selected Datasets</h3>
         
-        <div className="mb-2">
-          <h4 className="text-sm font-medium text-gray-600">Constraints:</h4>
-          <div className="text-sm text-gray-500">
-            {selectedConstraintIds.length === 0 ? (
-              <span className="italic">None selected</span>
-            ) : (
-              <ul className="list-disc pl-5">
-                {allConstraints
-                  .filter(c => selectedConstraintIds.includes(c.id))
-                  .map(c => (
-                    <li key={c.id}>{c.name}</li>
-                  ))}
-              </ul>
-            )}
-          </div>
-        </div>
-        
-        <div className="mb-2">
-          <h4 className="text-sm font-medium text-gray-600">Conditions:</h4>
-          <div className="text-sm text-gray-500">
-            {selectedConditionIds.length === 0 ? (
-              <span className="italic">None selected</span>
-            ) : (
-              <ul className="list-disc pl-5">
-                {allConditions
-                  .filter(c => selectedConditionIds.includes(c.id))
-                  .map(c => (
-                    <li key={c.id}>{c.name}</li>
-                  ))}
-              </ul>
-            )}
-          </div>
-        </div>
-
-        <div className="mb-2">
-          <h4 className="text-sm font-medium text-gray-600">STP Files:</h4>
-          <div className="text-sm text-gray-500">
-            {selectedStpFileIds.length === 0 ? (
-              <span className="italic">None selected</span>
-            ) : (
-              <div className="mt-2">
-                <table className="min-w-full text-sm border-collapse">
-                  <thead>
-                    <tr className="bg-gray-100">
-                      <th className="text-left p-1">File</th>
-                      <th className="text-left p-1">Format</th>
-                      <th className="text-left p-1">Coordinate</th>
-                      <th className="text-left p-1">Resolution</th>
+        <div className="mb-4">
+          {getAllSelectedDatasets().length === 0 ? (
+            <div className="text-sm text-gray-500 italic">No datasets selected</div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-sm border-collapse">
+                <thead>
+                  <tr className="bg-gray-100">
+                    <th className="text-left p-1">File</th>
+                    <th className="text-left p-1">Category</th>
+                    <th className="text-left p-1">Format</th>
+                    <th className="text-left p-1">Coordinate</th>
+                    <th className="text-left p-1">Resolution</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {getAllSelectedDatasets().map(dataset => (
+                    <tr key={dataset.id} className="border-t border-gray-200">
+                      <td className="p-1">
+                        <span className="mr-1">{getFileIcon(dataset.fileType)}</span>
+                        {dataset.name}
+                        {dataset.isUserUploaded && (
+                          <span className="ml-2 px-2 py-0.5 bg-blue-100 text-blue-800 text-xs rounded">Uploaded</span>
+                        )}
+                      </td>
+                      <td className="p-1">
+                        <span className={dataset.type === 'constraints_factors' ? 'text-red-600' : 'text-purple-600'}>
+                          {getCategoryDisplay(dataset.type)}
+                        </span>
+                      </td>
+                      <td className="p-1">{getFormatDisplay(dataset)}</td>
+                      <td className="p-1">{getCoordinateDisplay(dataset)}</td>
+                      <td className="p-1">{getResolutionDisplay(dataset)}</td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {allStpFiles
-                      .filter(f => selectedStpFileIds.includes(f.id))
-                      .map(f => (
-                        <tr key={f.id} className="border-t border-gray-200">
-                          <td className="p-1">
-                            <span className="mr-1">{getFileIcon(f.fileType)}</span>
-                            {f.name}
-                          </td>
-                          <td className="p-1">
-                            {getFormatDisplay(f)}
-                          </td>
-                          <td className="p-1">{getCoordinateDisplay(f)}</td>
-                          <td className="p-1">{getResolutionDisplay(f)}</td>
-                        </tr>
-                      ))}
-                  </tbody>
-                </table>
-                </div>
-            )}
-          </div>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
         
         <div className="flex justify-between items-center mt-4">
           <div>
             <span className="text-sm font-medium text-gray-700">
               Selected: {selectedConstraintIds.length} constraints, 
-              {selectedConditionIds.length} conditions, 
-              {selectedStpFileIds.length} STP files
+              {selectedConditioningIds.length} conditioning factors
             </span>
           </div>
           <button 
             className="bg-cyan-500 text-white px-4 py-2 rounded-md hover:bg-cyan-600 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2"
-            onClick={handleApplySelection}
+            onClick={handleDisplaySelection}
           >
-            Apply Selection
+            Display
           </button>
         </div>
       </div>
@@ -669,7 +525,7 @@ export default function DataSelectionPart({
               <h3 className="text-lg font-medium">Selection Required</h3>
             </div>
             <p className="mb-4 text-gray-600">
-              Please select at least one dataset from either Constraints or Conditions before proceeding.
+              Please select at least one dataset from either Constraints or Conditioning Factors before proceeding.
             </p>
             <div className="flex justify-end">
               <button
