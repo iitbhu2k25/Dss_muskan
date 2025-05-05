@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, RefObject } from 'react';
-import { Dataset, ProcessedData } from './ProcessingPart';
+import { Dataset, ProcessedData } from './Processing';
 
 interface InterpolationStepProps {
   stepRef: RefObject<HTMLDivElement>;
@@ -13,7 +13,7 @@ interface InterpolationStepProps {
   currentSelectedDataset: Dataset | null;
 }
 
-export default function InterpolationStep({
+export default function InterpolationStep({ 
   stepRef,
   selectedDatasets,
   interpolatedData,
@@ -27,15 +27,17 @@ export default function InterpolationStep({
   const [shapefileAttributes, setShapefileAttributes] = useState<{ [key: string]: string[] }>({});
   const [selectedAttributes, setSelectedAttributes] = useState<{ [key: string]: string }>({});
   const [isLoading, setIsLoading] = useState<{ [key: string]: boolean }>({});
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [processedTiffs, setProcessedTiffs] = useState<ProcessedData[]>([]);
+  const [showDisplay, setShowDisplay] = useState(false);
 
-  // Find related DBF file for a shapefile
+  // Enhanced function to find related DBF file for a shapefile
   const findRelatedDbfFile = (shapefile: Dataset, allDatasets: Dataset[]) => {
-    // Get base name of the shapefile (without extension)
     const baseNameParts = shapefile.name.split('.');
-    baseNameParts.pop(); // Remove extension
+    baseNameParts.pop();
     const baseName = baseNameParts.join('.');
     
-    // Look for a DBF file with the same base name
     return allDatasets.find(dataset => {
       const lowerFileName = dataset.name.toLowerCase();
       return lowerFileName.endsWith('.dbf') && 
@@ -43,159 +45,142 @@ export default function InterpolationStep({
     });
   };
 
-  // Fetch shapefile attributes when selected files change
   useEffect(() => {
     const fetchAttributes = async () => {
-      // Create a new list of loading states
       const newLoadingStates = { ...isLoading };
-      
-      // Get the newly selected shapefile IDs
+      const newErrors = { ...errors };
+  
+      selectedShapefiles.forEach(id => {
+        newErrors[id] = '';
+      });
+  
       const newlySelectedIds = selectedShapefiles.filter(id => !Object.keys(shapefileAttributes).includes(id));
-      
-      // Set loading state for new selections
+  
       newlySelectedIds.forEach(id => {
         newLoadingStates[id] = true;
       });
       setIsLoading(newLoadingStates);
-      
-      // Only fetch for newly selected shapefiles
+      setErrors(newErrors);
+  
       if (newlySelectedIds.length === 0) return;
-      
-      const formData = new FormData();
-      
-      // Log selected files for debugging
-      console.log("Selected shapefiles:", newlySelectedIds);
-      console.log("All datasets:", selectedDatasets.map(d => ({ id: d.id, name: d.name })));
-      
-      // Get the shapefiles to send
-      const shapefilesToSend = selectedDatasets
-        .filter((d) => newlySelectedIds.includes(d.id));
-      
-      console.log("Shapefiles to send:", shapefilesToSend);
-      
-      // For each shapefile, send both the shapefile and its associated DBF file if available
-      shapefilesToSend.forEach((shapefile) => {
-        if (shapefile.file instanceof File) {
-          console.log("Appending shapefile:", shapefile.name);
-          formData.append('files', shapefile.file, shapefile.name);
-          
-          // Try to find associated DBF file
-          const dbfFile = findRelatedDbfFile(shapefile, selectedDatasets);
-          if (dbfFile && dbfFile.file instanceof File) {
-            console.log("Appending associated DBF file:", dbfFile.name);
-            formData.append('files', dbfFile.file, dbfFile.name);
-          } else {
-            console.log("No associated DBF file found for:", shapefile.name);
-            
-            // Alternative: Create file IDs to send for server-side lookup
-            const fileId = shapefile.id;
-            if (!formData.has('fileIds')) {
-              formData.append('fileIds', fileId);
-            } else {
-              const existingIds = formData.get('fileIds') as string;
-              formData.set('fileIds', `${existingIds},${fileId}`);
-            }
-          }
+  
+      const shapefilesToSend = selectedDatasets.filter((d) => newlySelectedIds.includes(d.id));
+  
+      if (shapefilesToSend.length === 0) {
+        console.error('No files selected to send');
+        return;
+      }
+  
+      // Prepare file paths for conditioningFactors and constraintsFactors
+      const conditioningPaths: string[] = [];
+      const constraintsPaths: string[] = [];
+  
+      shapefilesToSend.forEach(shapefile => {
+        const fileName = shapefile.name;
+        conditioningPaths.push(`stp_suitability/conditioningFactors/${fileName}`);
+        constraintsPaths.push(`stp_suitability/constraintsFactors/${fileName}`);
+  
+        const dbfFile = findRelatedDbfFile(shapefile, selectedDatasets);
+        if (dbfFile) {
+          conditioningPaths.push(`stp_suitability/conditioningFactors/${dbfFile.name}`);
+          constraintsPaths.push(`stp_suitability/constraintsFactors/${dbfFile.name}`);
         }
       });
-
+  
       try {
-        console.log("Sending request to backend...");
-        console.log("FormData entries:", [...formData.entries()].map(([key, value]) => {
-          return { key, value: value instanceof File ? `File: ${value.name}` : value };
-        }));
-        
-        const response = await fetch('http://localhost:9000/api/stp_suitability/get-multiple-attributes/', {
-          method: 'POST',
-          body: formData,
-        });
-
-        const result = await response.json();
-        console.log("Response from backend:", result);
-
-        if (result.attributes) {
-          const newAttributes = { ...shapefileAttributes };
-          
-          // Try different matching strategies for each file
-          Object.entries(result.attributes).forEach(([fileName, attrs]) => {
-            console.log(`Processing attributes for file: ${fileName}`);
-            
-            // Try different matching strategies
-            let matchedDataset = null;
-            
-            // Strategy 1: Exact name match
-            matchedDataset = selectedDatasets.find(d => d.name === fileName);
-            
-            // Strategy 2: Match with extension
-            if (!matchedDataset) {
-              matchedDataset = selectedDatasets.find(d => d.name === `${fileName}.shp`);
-            }
-            
-            // Strategy 3: Match by basename
-            if (!matchedDataset) {
-              const fileBaseName = fileName.split('.')[0];
-              matchedDataset = selectedDatasets.find(d => {
-                const datasetBaseName = d.name.split('.')[0];
-                return datasetBaseName === fileBaseName;
-              });
-            }
-            
-            // Strategy 4: Match by name within filename
-            if (!matchedDataset) {
-              matchedDataset = selectedDatasets.find(d => {
-                const datasetBaseName = d.name.split('.')[0];
-                return fileName.includes(datasetBaseName);
-              });
-            }
-            
-            if (matchedDataset) {
-              console.log(`Found matching dataset: ${matchedDataset.id} for file: ${fileName}`);
-              newAttributes[matchedDataset.id] = Array.isArray(attrs) ? attrs : [];
-              
-              // Update loading state
-              newLoadingStates[matchedDataset.id] = false;
-            } else {
-              console.log(`No matching dataset found for file: ${fileName}`);
-              
-              // Try one last approach - match to any of the newly selected IDs
-              // that don't have attributes yet
-              const unmatchedIds = newlySelectedIds.filter(id => !newAttributes[id]);
-              if (unmatchedIds.length > 0) {
-                const firstUnmatchedId = unmatchedIds[0];
-                console.log(`Forcing match to first unmatched ID: ${firstUnmatchedId}`);
-                newAttributes[firstUnmatchedId] = Array.isArray(attrs) ? attrs : [];
-                newLoadingStates[firstUnmatchedId] = false;
-              }
-            }
-          });
-          
-          console.log("Setting shapefile attributes:", newAttributes);
-          setShapefileAttributes(newAttributes);
-          
-          // Update loading states for any files that didn't get attributes
-          selectedShapefiles.forEach(id => {
-            if (newLoadingStates[id] && !newAttributes[id]) {
-              newLoadingStates[id] = false;
-            }
-          });
-          setIsLoading(newLoadingStates);
+        // Fetch attributes from both subfolders concurrently
+        const [conditioningResponse, constraintsResponse] = await Promise.all([
+          conditioningPaths.length > 0
+            ? fetch('http://localhost:9000/api/stp_suitability/get-multiple-attributes/', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ file_paths: conditioningPaths }),
+              }).then(res => res.json())
+            : Promise.resolve({ attributes: {} }),
+          constraintsPaths.length > 0
+            ? fetch('http://localhost:9000/api/stp_suitability/get-multiple-attributes/', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ file_paths: constraintsPaths }),
+              }).then(res => res.json())
+            : Promise.resolve({ attributes: {} }),
+        ]);
+  
+        // Check for errors in responses
+        if (conditioningResponse.error || constraintsResponse.error) {
+          throw new Error(
+            conditioningResponse.error || constraintsResponse.error || 'Failed to fetch attributes'
+          );
         }
+  
+        // Combine attributes from both responses
+        const results: { [key: string]: string[] } = {};
+  
+        // Process conditioningFactors attributes
+        if (conditioningResponse.attributes) {
+          Object.entries(conditioningResponse.attributes).forEach(([fileName, attrs]) => {
+            if (Array.isArray(attrs)) {
+              results[fileName] = [...(results[fileName] || []), ...attrs];
+            }
+          });
+        }
+  
+        // Process constraintsFactors attributes
+        if (constraintsResponse.attributes) {
+          Object.entries(constraintsResponse.attributes).forEach(([fileName, attrs]) => {
+            if (Array.isArray(attrs)) {
+              results[fileName] = [...new Set([...(results[fileName] || []), ...attrs])];
+            }
+          });
+        }
+  
+        // Map attributes to dataset IDs
+        const newAttributes = { ...shapefileAttributes };
+  
+        shapefilesToSend.forEach(dataset => {
+          const fileName = dataset.name;
+          const baseName = fileName.split('.')[0].toLowerCase();
+          const matchedAttributes = Object.entries(results).reduce((acc, [key, attrs]) => {
+            const keyBaseName = key.split('.')[0].toLowerCase();
+            if (keyBaseName === baseName) {
+              return [...acc, ...attrs];
+            }
+            return acc;
+          }, [] as string[]);
+  
+          newAttributes[dataset.id] = [...new Set(matchedAttributes)];
+          newLoadingStates[dataset.id] = false;
+  
+          if (newAttributes[dataset.id].length === 0) {
+            newErrors[dataset.id] = 'No attributes found in the shapefile or its DBF file.';
+          }
+        });
+  
+        setShapefileAttributes(newAttributes);
+        setIsLoading(newLoadingStates);
+        setErrors(newErrors);
       } catch (error) {
         console.error('Error fetching attributes:', error);
-        
-        // Reset loading state on error
-        const resetLoadingStates = { ...newLoadingStates };
-        Object.keys(resetLoadingStates).forEach(key => {
-          resetLoadingStates[key] = false;
+  
+        newlySelectedIds.forEach(id => {
+          newLoadingStates[id] = false;
+          newErrors[id] = error instanceof Error
+            ? `Error: ${error.message}`
+            : 'Failed to fetch attributes. Please try again.';
         });
-        setIsLoading(resetLoadingStates);
+  
+        setIsLoading(newLoadingStates);
+        setErrors(newErrors);
       }
     };
-
+  
     fetchAttributes();
   }, [selectedShapefiles, selectedDatasets]);
 
-  // Rest of your component code remains the same...
   const getFileIcon = (fileType?: string) => {
     switch (fileType?.toLowerCase()) {
       case 'shp': return '📊';
@@ -218,6 +203,10 @@ export default function InterpolationStep({
         ? prev.filter((id) => id !== datasetId)
         : [...prev, datasetId]
     );
+    
+    if (errors[datasetId]) {
+      setErrors(prev => ({ ...prev, [datasetId]: '' }));
+    }
   };
 
   const handleAttributeSelection = (datasetId: string, attribute: string) => {
@@ -227,7 +216,7 @@ export default function InterpolationStep({
     }));
   };
 
-  const handleApplyInterpolation = () => {
+  const handleApplyInterpolation = async () => {
     if (!interpolationMethod) {
       alert('Please select an interpolation method.');
       return;
@@ -238,30 +227,93 @@ export default function InterpolationStep({
       return;
     }
 
-    if (selectedShapefiles.some((id) => !selectedAttributes[id])) {
-      alert('Please select an attribute for each selected shapefile.');
+    const missingAttributes = selectedShapefiles.filter(id => !selectedAttributes[id]);
+    if (missingAttributes.length > 0) {
+      const missingFileNames = missingAttributes
+        .map(id => selectedDatasets.find(d => d.id === id)?.name || id)
+        .join(', ');
+      
+      alert(`Please select an attribute for each selected shapefile: ${missingFileNames}`);
       return;
     }
 
-    const newInterpolatedData = selectedShapefiles.map((id) => {
-      const dataset = selectedDatasets.find((d) => d.id === id);
-      return {
-        fileName: dataset?.name || 'Interpolated_' + id,
-        dataset,
-        process: 'Interpolation Completed',
-        projection: 'EPSG:4326',
-      };
-    });
+    setIsProcessing(true);
 
-    setInterpolatedData([...interpolatedData, ...newInterpolatedData]);
+    try {
+      // Prepare the request payload
+      const interpolationRequests = selectedShapefiles.map(id => {
+        const dataset = selectedDatasets.find(d => d.id === id);
+        const attribute = selectedAttributes[id];
+        
+        // Find related DBF file
+        const dbfFile = dataset ? findRelatedDbfFile(dataset, selectedDatasets) : undefined;
+        
+        return {
+          shapefile_path: dataset?.name,
+          dbf_path: dbfFile?.name,
+          attribute: attribute,
+          method: interpolationMethod
+        };
+      });
+
+      // Simulate server response with mock data
+      // This would normally be replaced with actual API call
+      
+      // Create mock TIFF files based on the selected shapefiles and attributes
+      const mockTiffFiles: ProcessedData[] = selectedShapefiles.map(id => {
+        const dataset = selectedDatasets.find(d => d.id === id);
+        const attribute = selectedAttributes[id];
+        
+        // Create a file name for the interpolated TIFF
+        const baseName = dataset?.name.split('.')[0] || 'interpolated';
+        const tiffFileName = `${baseName}_${attribute}_${interpolationMethod}.tif`;
+        
+        // Create a new dataset object for the TIFF
+        const tiffDataset: Dataset = {
+          id: `tiff-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          name: tiffFileName,
+          fileType: 'tif',
+          format: 'Raster',
+          path: `stp_suitability/interpolation_results/${tiffFileName}`,
+          size: 0,
+          lastModified: new Date().toISOString(),
+        };
+
+        return {
+          fileName: tiffFileName,
+          dataset: tiffDataset,
+          process: `Interpolation (${interpolationMethod}) on ${dataset?.name} - ${attribute}`,
+          projection: 'EPSG:4326',
+          interpolationMethod,
+          sourceAttribute: attribute,
+          originalDataset: dataset,
+          metadata: {
+            resolution: '30m x 30m',
+            bounds: [100.0, 20.0, 105.0, 25.0],
+            pixelType: 'Float32',
+            noDataValue: -9999
+          }
+        };
+      });
+
+      setProcessedTiffs(mockTiffFiles);
+      setInterpolatedData([...interpolatedData, ...mockTiffFiles]);
+      
+    } catch (error) {
+      console.error('Interpolation error:', error);
+      alert(`Error during interpolation: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleDisplayClick = () => {
+    setShowDisplay(true);
+    // Here you would typically trigger a map display with the selected data
+    console.log("Display clicked with processed files:", processedTiffs);
   };
 
   const handleProceedClick = () => {
-    if (interpolatedData.length === 0 && selectedShapefiles.length > 0) {
-      alert('Please apply interpolation before proceeding.');
-      return;
-    }
-
     const newProcessedData = [
       ...selectedDatasets.map((dataset) => ({
         fileName: dataset.name,
@@ -342,23 +394,26 @@ export default function InterpolationStep({
                     <option value="">
                       {isLoading[id] ? 'Loading attributes...' : 'Select...'}
                     </option>
-                    {shapefileAttributes[id]?.length === 0 && !isLoading[id] && (
-                      <option value="" disabled>
-                        No attributes found
-                      </option>
-                    )}
                     {shapefileAttributes[id]?.map((attr) => (
                       <option key={attr} value={attr}>{attr}</option>
                     ))}
                   </select>
+                  
                   {isLoading[id] && (
                     <div className="mt-1 text-sm text-blue-500">
                       Loading attributes...
                     </div>
                   )}
-                  {!isLoading[id] && shapefileAttributes[id]?.length === 0 && (
+                  
+                  {!isLoading[id] && errors[id] && (
                     <div className="mt-1 text-sm text-red-500">
-                      No attributes found. Please check the shapefile.
+                      {errors[id]}
+                    </div>
+                  )}
+                  
+                  {!isLoading[id] && !errors[id] && shapefileAttributes[id]?.length === 0 && (
+                    <div className="mt-1 text-sm text-red-500">
+                      No attributes found. Please check the shapefile and its DBF file.
                     </div>
                   )}
                 </div>
@@ -367,21 +422,75 @@ export default function InterpolationStep({
           </div>
         )}
 
-        <div className="flex gap-2">
+        <div className="flex gap-2 mb-4">
           <button 
-            className="bg-green-500 text-white px-4 py-2 rounded" 
+            className={`${isProcessing ? 'bg-gray-400' : 'bg-green-500'} text-white px-4 py-2 rounded`}
             onClick={handleApplyInterpolation}
-            disabled={Object.values(isLoading).some(v => v)}
+            disabled={isProcessing}
           >
-            Apply
+            {isProcessing ? 'Processing...' : 'Apply'}
+          </button>
+          <button 
+            className="bg-blue-500 text-white px-4 py-2 rounded"
+            onClick={handleDisplayClick}
+            disabled={processedTiffs.length === 0}
+          >
+            Display
           </button>
           <button 
             className="bg-gray-600 text-white px-4 py-2 rounded" 
             onClick={handleProceedClick}
+            disabled={isProcessing}
           >
             Proceed
           </button>
         </div>
+        
+        {/* Display processed TIFF files */}
+        {processedTiffs.length > 0 && (
+          <div className="mt-4">
+            <h4 className="text-sm font-semibold mb-2 text-gray-700">Interpolated TIFF Files</h4>
+            <table className="w-full border">
+              <thead className="bg-gray-100 text-sm text-gray-600">
+                <tr>
+                  <th className="px-2 py-1 text-left">File</th>
+                  <th className="px-2 py-1 text-left">Format</th>
+                  <th className="px-2 py-1 text-left">Interpolation</th>
+                  <th className="px-2 py-1 text-left">Source</th>
+                </tr>
+              </thead>
+              <tbody>
+                {processedTiffs.map((tiff, index) => (
+                  <tr key={index} className="border-t border-gray-200">
+                    <td className="px-2 py-2 flex items-center">
+                      <span className="mr-2">🗺️</span>
+                      {tiff.fileName}
+                    </td>
+                    <td className="px-2 py-2">
+                      {tiff.dataset.fileType?.toUpperCase() || 'TIF'}
+                    </td>
+                    <td className="px-2 py-2">{tiff.interpolationMethod}</td>
+                    <td className="px-2 py-2">
+                      {tiff.originalDataset?.name} - {tiff.sourceAttribute}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+        
+        {/* Status message for display action */}
+        {showDisplay && processedTiffs.length > 0 && (
+          <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+            <p className="text-blue-700 flex items-center">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+              </svg>
+              Displaying {processedTiffs.length} interpolated layers on the map
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

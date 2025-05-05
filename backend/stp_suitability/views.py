@@ -4,8 +4,7 @@ from django.conf import settings
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from .attributes import GetMultipleAttributesView
-
+from .attributes import GetMultipleFileAttributesView
 # Updated function to extract ACTUAL metadata from raster files using rasterio with correct resolution calculation
 def extract_raster_metadata(file_path):
     """
@@ -754,3 +753,5 @@ def get_file_details(request, file_id):
             {'error': str(e)},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
+
+

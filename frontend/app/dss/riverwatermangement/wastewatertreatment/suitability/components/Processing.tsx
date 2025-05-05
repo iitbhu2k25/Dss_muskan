@@ -314,9 +314,40 @@ export default function ProcessingPart({ selectedDatasets, selectedConstraints }
                         </td>
                         <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-700">
                           {dataset.format === 'Vector' || dataset.fileType === 'shp' ? (
-                            <span className="text-amber-600 font-medium">Do Interpolation first, then process</span>
+                            <span className="text-amber-600 font-medium">
+                                {[
+                                  "1. First interpolate the Shapefiles.",
+                                  "2. Project all the Raster's into desirable coordinate system.",
+                                  "3. Resample all the Raster's at same grid size (eg:30m).",
+                                  "4. Reclassify all the Raster's according to their importance.",
+                                  "5. Normalization all the Raster's (eg: 0-1) to bring them at same interval.",
+                                  "6. Proceed for Weighted overlay Analysis."
+                                ].map((step, index, arr) => (
+                                  <span key={index}>
+                                    {step}
+                                    {index !== arr.length - 1 && <br />}
+                                  </span>
+                                ))}
+                              </span>
+                       
                           ) : (
-                            <span className="text-green-600 font-medium">Go for all processing</span>
+                            <span className="text-green-600 font-medium">
+                            
+                            
+                              {[
+                                "1. Project all the Raster's into desirable coordinate system.",
+                                "2. Resample all the Raster's at same grid size (eg:30m).",
+                                "3. Reclassify all the Raster's according to their importance.",
+                                "4. Normalization all the Raster's (eg: 0-1) to bring them at same interval.",
+                                "5. Proceed for Weighted overlay Analysis."
+                              ].map((step, index) => (
+                                <span key={index}>
+                                  {step}
+                                  <br />
+                                </span>
+                              ))}
+                            </span>
+
                           )}
                         </td>
                       </tr>
