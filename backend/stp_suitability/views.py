@@ -5,6 +5,7 @@ from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from .attributes import GetMultipleFileAttributesView
+
 # Updated function to extract ACTUAL metadata from raster files using rasterio with correct resolution calculation
 def extract_raster_metadata(file_path):
     """
@@ -657,6 +658,85 @@ def process_selected_files(request):
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 
+@api_view(['POST'])
+def vector_to_geojson(request):
+    """
+    Convert vector files (shapefile) to GeoJSON.
+    Expected request body format:
+    {
+        "vectors": [
+            {"id": "vector_id", "path": "path/to/file.shp"}
+        ]
+    }
+    """
+    # Check if request data contains vectors
+    if not request.data or 'vectors' not in request.data:
+        return Response(
+            {"error": "Invalid request. 'vectors' field is required."},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    vectors = request.data['vectors']
+    result = {}
+    
+    try:
+        for vector in vectors:
+            vector_id = vector.get('id')
+            if not vector_id:
+                continue
+                
+            file_path = vector.get('path')
+            if not file_path:
+                result[vector_id] = {
+                    'error': f'No file path provided for ID: {vector_id}'
+                }
+                continue
+            
+            # Convert relative path to absolute path if needed
+            if not os.path.isabs(file_path):
+                file_path = os.path.join(settings.MEDIA_ROOT, file_path)
+            
+            # Check if file exists
+            if not os.path.exists(file_path):
+                result[vector_id] = {
+                    'error': f'File not found: {file_path}'
+                }
+                continue
+            
+            # Check if file is a shapefile
+            if not file_path.lower().endswith('.shp'):
+                result[vector_id] = {
+                    'error': f'File is not a shapefile: {file_path}'
+                }
+                continue
+            
+            try:
+                # Read shapefile using geopandas
+                import geopandas as gpd
+                gdf = gpd.read_file(file_path)
+                
+                # Convert to GeoJSON
+                geojson_data = json.loads(gdf.to_json())
+                
+                # Add to result
+                result[vector_id] = geojson_data
+                
+            except Exception as e:
+                result[vector_id] = {
+                    'error': f'Error processing file {file_path}: {str(e)}'
+                }
+        
+        return Response(result)
+    
+    except Exception as e:
+        import logging
+        logging.error(f"Error in vector_to_geojson: {str(e)}")
+        return Response(
+            {'error': f'Server error processing vector data: {str(e)}'},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+        
 @api_view(['GET'])
 def get_file_details(request, file_id):
     """

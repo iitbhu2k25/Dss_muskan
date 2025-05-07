@@ -12,31 +12,40 @@ export interface Dataset {
   format?: string; // 'Raster' or 'Vector'
   coordinateSystem?: string; // e.g., 'EPSG:4326'
   resolution?: string; // e.g., '30m x 30m'
+  geometryType?: string; // e.g., 'Point', 'LineString', 'Polygon'
+  path?: string; // Path to the file on the server
 }
 
 interface DataSelectionProps {
   onSelectDatasets: (datasets: Dataset[]) => void;
   onConstraintsChange?: (constraintIds: string[]) => void;
   onConditionsChange?: (conditioningIds: string[]) => void;
+  onDisplayVectors?: (vectorData: any) => void; // New prop for handling vector display
+  onDisplayRasters?: (rasterPaths: string[]) => void; // New prop for handling raster display
 }
 
 export default function DataSelectionPart({ 
   onSelectDatasets, 
   onConstraintsChange, 
   onConditionsChange,
+  onDisplayVectors,
+  onDisplayRasters,
 }: DataSelectionProps) {
   // State
   const [dataSource, setDataSource] = useState<'existing' | 'upload'>('existing');
   const [selectedConstraintIds, setSelectedConstraintIds] = useState<string[]>([]);
   const [selectedConditioningIds, setSelectedConditioningIds] = useState<string[]>([]);
   const [uploadedDatasets, setUploadedDatasets] = useState<Dataset[]>([]);
-  const [uploadCategory, setUploadCategory] = useState<'constraints_factors' | 'conditioning_factors'>('constraints_factors');
+  // Changed from string to array to allow multiple categories
+  const [uploadCategories, setUploadCategories] = useState<Array<'constraints_factors' | 'conditioning_factors'>>(['constraints_factors']);
   const [fileInput, setFileInput] = useState<string>('');
   const [showValidationPopup, setShowValidationPopup] = useState<boolean>(false);
   const [isLoadingConstraints, setIsLoadingConstraints] = useState<boolean>(true);
   const [isLoadingConditioning, setIsLoadingConditioning] = useState<boolean>(true);
   const [constraintsFiles, setConstraintsFiles] = useState<Dataset[]>([]);
   const [conditioningFiles, setConditioningFiles] = useState<Dataset[]>([]);
+  const [isLoadingVectors, setIsLoadingVectors] = useState<boolean>(false);
+  const [isLoadingRasters, setIsLoadingRasters] = useState<boolean>(false);
   
   // Combined datasets
   const allConstraints = [...constraintsFiles, ...uploadedDatasets.filter(d => d.type === 'constraints_factors')];
@@ -117,10 +126,11 @@ export default function DataSelectionPart({
     onSelectDatasets([...selectedConstraints, ...selectedConditioning]);
   };
   
+  // Updated to handle multiple categories
   const handleFileUpload = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (fileInput.trim() === '') return;
+    if (fileInput.trim() === '' || uploadCategories.length === 0) return;
     
     const fileExtension = fileInput.split('.').pop()?.toLowerCase();
     if (!['shp', 'tif', 'tiff'].includes(fileExtension || '')) {
@@ -133,38 +143,139 @@ export default function DataSelectionPart({
     if (fileExtension === 'shp') format = "Vector";
     if (['tif', 'tiff'].includes(fileExtension || '')) format = "Raster";
     
-    // For uploaded files, don't set default metadata values
-    // The user might set these later or they'll be extracted when the file is processed
-    const newDataset: Dataset = {
-      id: `uploaded-${Date.now()}`,
+    // Create a dataset for each selected category
+    const timestamp = Date.now();
+    const newDatasets = uploadCategories.map(category => ({
+      id: `uploaded-${timestamp}-${category}`,
       name: fileInput,
-      type: uploadCategory,
-      description: `User uploaded ${uploadCategory} dataset`,
+      type: category,
+      description: `User uploaded ${category} dataset`,
       isUserUploaded: true,
       fileType: fileExtension || 'unknown',
       format: format,
-      // Leave coordinateSystem and resolution empty for uploaded files
       coordinateSystem: '',
-      resolution: format === 'Raster' ? '' : 'N/A'
-    };
+      resolution: format === 'Raster' ? '' : 'N/A',
+      geometryType: format === 'Vector' ? 'Unknown' : 'N/A'
+    }));
     
-    setUploadedDatasets([...uploadedDatasets, newDataset]);
+    setUploadedDatasets([...uploadedDatasets, ...newDatasets]);
     setFileInput('');
   };
 
-  const handleDisplaySelection = () => {
-    if (selectedConstraintIds.length === 0 && selectedConditioningIds.length === 0) {
-      setShowValidationPopup(true);
+  // Helper for toggling categories in checkbox
+  const toggleCategory = (category: 'constraints_factors' | 'conditioning_factors') => {
+    if (uploadCategories.includes(category)) {
+      // Remove category if it exists (but don't allow empty array)
+      const newCategories = uploadCategories.filter(cat => cat !== category);
+      setUploadCategories(newCategories.length > 0 ? newCategories : [category]);
     } else {
-      console.log('Selection displayed:', {
-        constraints: allConstraints.filter(c => selectedConstraintIds.includes(c.id)),
-        conditioning: allConditioning.filter(c => selectedConditioningIds.includes(c.id))
+      // Add category if it doesn't exist
+      setUploadCategories([...uploadCategories, category]);
+    }
+  };
+
+  // New handler for displaying vectors
+  const handleDisplayVectors = async () => {
+    const selectedDatasets = getAllSelectedDatasets();
+    const vectorDatasets = selectedDatasets.filter(dataset => 
+      dataset.format === 'Vector' || dataset.fileType === 'shp'
+    );
+    
+    if (vectorDatasets.length === 0) {
+      alert('No vector datasets selected. Please select at least one shapefile.');
+      return;
+    }
+    
+    setIsLoadingVectors(true);
+    
+    try {
+      // Prepare the paths to send to the backend
+      const vectorPaths = vectorDatasets.map(dataset => ({
+        id: dataset.id,
+        // Use filePath property from the API response, not path
+        path: dataset.filePath || dataset.path
+      }));
+      
+      console.log('Sending vector paths to backend:', vectorPaths);
+      
+      // Send request to backend to get GeoJSON data
+      const response = await fetch('http://localhost:9000/api/stp_suitability/vector-geojson/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ vectors: vectorPaths })
       });
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch vector data');
+      }
+      
+      const geoJsonData = await response.json();
+      
+      // Check for errors in the response
+      const errors = Object.entries(geoJsonData)
+        .filter(([_, value]) => value.error)
+        .map(([id, value]) => `${id}: ${value.error}`);
+        
+      if (errors.length > 0) {
+        console.warn('Some vectors failed to load:', errors);
+        // Only alert if ALL vectors failed
+        if (errors.length === vectorPaths.length) {
+          alert(`Error loading vector data: ${errors.join(', ')}`);
+          return;
+        }
+      }
+      
+      // Call the callback function with the GeoJSON data that loaded successfully
+      const successfulData = Object.fromEntries(
+        Object.entries(geoJsonData).filter(([_, value]) => !value.error)
+      );
+      
+      if (Object.keys(successfulData).length > 0) {
+        onDisplayVectors?.(successfulData);
+        console.log('Vector data fetched successfully:', successfulData);
+      } else {
+        alert('No vector data was successfully loaded.');
+      }
+    } catch (error) {
+      console.error('Error fetching vector data:', error);
+      alert('Error fetching vector data. Please try again.');
+    } finally {
+      setIsLoadingVectors(false);
     }
   };
   
-  const hasSelectedData = () => {
-    return selectedConstraintIds.length > 0 || selectedConditioningIds.length > 0;
+  // New handler for displaying rasters
+  const handleDisplayRasters = async () => {
+    const selectedDatasets = getAllSelectedDatasets();
+    const rasterDatasets = selectedDatasets.filter(dataset => 
+      dataset.format === 'Raster' || ['tif', 'tiff'].includes(dataset.fileType || '')
+    );
+    
+    if (rasterDatasets.length === 0) {
+      alert('No raster datasets selected. Please select at least one TIF/TIFF file.');
+      return;
+    }
+    
+    setIsLoadingRasters(true);
+    
+    try {
+      // Prepare the paths to send to the backend
+      const rasterPaths = rasterDatasets.map(dataset => 
+        dataset.path || `/path/to/${dataset.name}` // Use the actual path if available
+      );
+      
+      // Call the callback function with the raster paths
+      onDisplayRasters?.(rasterPaths);
+      
+      console.log('Raster paths prepared:', rasterPaths);
+    } catch (error) {
+      console.error('Error preparing raster data:', error);
+      alert('Error preparing raster data. Please try again.');
+    } finally {
+      setIsLoadingRasters(false);
+    }
   };
 
   const getFileIcon = (fileType?: string) => {
@@ -198,6 +309,13 @@ export default function DataSelectionPart({
     return file.resolution || 'Not specified';
   };
 
+  // Get geometry type display, handling empty values
+  const getGeometryTypeDisplay = (file: Dataset) => {
+    // Only show geometry type for vector files
+    if (file.format !== 'Vector' && file.fileType !== 'shp') return 'N/A';
+    return file.geometryType || 'Not specified';
+  };
+
   // Get category display name
   const getCategoryDisplay = (type: string) => {
     switch(type) {
@@ -229,12 +347,15 @@ export default function DataSelectionPart({
               <th scope="col" className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Resolution
               </th>
+              <th scope="col" className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Geometry Type
+              </th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {files.length === 0 ? (
               <tr>
-                <td colSpan={4} className="px-3 py-3 text-gray-500 text-sm text-center">
+                <td colSpan={5} className="px-3 py-3 text-gray-500 text-sm text-center">
                   No {type} files available
                 </td>
               </tr>
@@ -270,6 +391,9 @@ export default function DataSelectionPart({
                   <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-700">
                     {getResolutionDisplay(file)}
                   </td>
+                  <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-700">
+                    {getGeometryTypeDisplay(file)}
+                  </td>
                 </tr>
               ))
             )}
@@ -285,6 +409,21 @@ export default function DataSelectionPart({
     const selectedConditioning = allConditioning.filter(c => selectedConditioningIds.includes(c.id));
     return [...selectedConstraints, ...selectedConditioning];
   };
+
+  // Count selected vectors and rasters
+  const getSelectedCounts = () => {
+    const selectedDatasets = getAllSelectedDatasets();
+    const vectorCount = selectedDatasets.filter(d => 
+      d.format === 'Vector' || d.fileType === 'shp'
+    ).length;
+    const rasterCount = selectedDatasets.filter(d => 
+      d.format === 'Raster' || ['tif', 'tiff'].includes(d.fileType || '')
+    ).length;
+    
+    return { vectorCount, rasterCount };
+  };
+
+  const { vectorCount, rasterCount } = getSelectedCounts();
 
   return (
     <div className="bg-white rounded-lg shadow p-4">
@@ -351,32 +490,32 @@ export default function DataSelectionPart({
         </div>
       )}
       
-      {/* Upload New Data */}
+      {/* Upload New Data - UPDATED with checkboxes instead of radio buttons */}
       {dataSource === 'upload' && (
         <div className="mb-4">
           <form onSubmit={handleFileUpload} className="mb-6 p-4 border rounded-md bg-gray-50">
             <div className="mb-3">
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Category
+                Category (Select one or both)
               </label>
               <div className="flex space-x-4">
                 <label className="inline-flex items-center">
                   <input
-                    type="radio"
-                    className="form-radio text-red-600"
-                    name="uploadCategory"
-                    checked={uploadCategory === 'constraints_factors'}
-                    onChange={() => setUploadCategory('constraints_factors')}
+                    type="checkbox"
+                    className="form-checkbox text-red-600 rounded"
+                    name="uploadCategory-constraints"
+                    checked={uploadCategories.includes('constraints_factors')}
+                    onChange={() => toggleCategory('constraints_factors')}
                   />
                   <span className="ml-2">Constraints</span>
                 </label>
                 <label className="inline-flex items-center">
                   <input
-                    type="radio"
-                    className="form-radio text-purple-600"
-                    name="uploadCategory"
-                    checked={uploadCategory === 'conditioning_factors'}
-                    onChange={() => setUploadCategory('conditioning_factors')}
+                    type="checkbox"
+                    className="form-checkbox text-purple-600 rounded"
+                    name="uploadCategory-conditioning"
+                    checked={uploadCategories.includes('conditioning_factors')}
+                    onChange={() => toggleCategory('conditioning_factors')}
                   />
                   <span className="ml-2">Conditioning</span>
                 </label>
@@ -470,6 +609,7 @@ export default function DataSelectionPart({
                     <th className="text-left p-1">Format</th>
                     <th className="text-left p-1">Coordinate</th>
                     <th className="text-left p-1">Resolution</th>
+                    <th className="text-left p-1">Geometry Type</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -490,6 +630,7 @@ export default function DataSelectionPart({
                       <td className="p-1">{getFormatDisplay(dataset)}</td>
                       <td className="p-1">{getCoordinateDisplay(dataset)}</td>
                       <td className="p-1">{getResolutionDisplay(dataset)}</td>
+                      <td className="p-1">{getGeometryTypeDisplay(dataset)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -503,14 +644,49 @@ export default function DataSelectionPart({
             <span className="text-sm font-medium text-gray-700">
               Selected: {selectedConstraintIds.length} constraints, 
               {selectedConditioningIds.length} conditioning factors
+              ({vectorCount} vectors, {rasterCount} rasters)
             </span>
           </div>
-          <button 
-            className="bg-cyan-500 text-white px-4 py-2 rounded-md hover:bg-cyan-600 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2"
-            onClick={handleDisplaySelection}
-          >
-            Display
-          </button>
+          <div className="flex space-x-2">
+            <button 
+              className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:bg-blue-300 disabled:cursor-not-allowed flex items-center"
+              onClick={handleDisplayVectors}
+              disabled={vectorCount === 0 || isLoadingVectors}
+            >
+              {isLoadingVectors ? (
+                <>
+                  <svg className="animate-spin h-4 w-4 mr-2 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Loading...
+                </>
+              ) : (
+                <>
+                  <span>Display Vectors</span>
+                </>
+              )}
+            </button>
+            <button 
+              className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:bg-green-300 disabled:cursor-not-allowed flex items-center"
+              onClick={handleDisplayRasters}
+              disabled={rasterCount === 0 || isLoadingRasters}
+            >
+              {isLoadingRasters ? (
+                <>
+                  <svg className="animate-spin h-4 w-4 mr-2 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Loading...
+                </>
+              ) : (
+                <>
+                  <span>Display Rasters</span>
+                </>
+              )}
+            </button>
+          </div>
         </div>
       </div>
       
@@ -563,4 +739,9 @@ export function getDatasetIcon(fileType?: string): string {
     default:
       return '📄';
   }
+}
+
+export function getGeometryType(dataset: Dataset): string {
+  if (dataset.format !== 'Vector' && dataset.fileType !== 'shp') return 'N/A';
+  return dataset.geometryType || 'Not specified';
 }

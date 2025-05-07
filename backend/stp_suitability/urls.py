@@ -10,6 +10,7 @@ urlpatterns = [
     path('stp-files/<str:file_id>/details/', views.get_file_details, name='stp_file_details'),
     # path('get-multiple-attributes/', GetMultipleAttributesView.as_view(), name='get_multiple_attributes'),
     path('get-multiple-attributes/', GetMultipleFileAttributesView.as_view(), name='get-multiple-file-attributes'),
+    path('vector-geojson/', views.vector_to_geojson, name='vector_to_geojson'),
     
 ]
 
