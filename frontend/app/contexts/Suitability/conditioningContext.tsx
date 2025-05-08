@@ -26,20 +26,34 @@ export const ConditioningFactorsProvider: React.FC<{ children: React.ReactNode }
     const fetchFactors = async () => {
       setLoading(true);
       try {
-        // Replace with actual API call
-        // const response = await fetch('/api/conditioning-factors');
-        // const data = await response.json();
-        // setFactors(data);
-        setFactors([]);
+        // Uncomment and update with your actual API endpoint
+        const response = await fetch('http://localhost:7000/api/stp/get_conditioning_factors');
+        const data = await response.json();
+        
+        // Transform the data to match your ConditioningFactor interface if needed
+        const formattedData: ConditioningFactor[] = data.map((item: any) => ({
+          id: item.id.toString(),
+          name: item.name,
+          description: item.description || '',
+          selected: false, // Default to not selected
+          weight: item.weight || 1, // Default weight
+          category: item.category || 'General'
+        }));
+        
+        setFactors(formattedData);
       } catch (error) {
         console.error('Error fetching conditioning factors:', error);
+        // Set to empty array in case of error
+        setFactors([]);
       } finally {
         setLoading(false);
       }
     };
-
+  
     fetchFactors();
   }, []);
+
+   
 
   const updateFactors = (newFactors: ConditioningFactor[]) => {
     setFactors(newFactors);

@@ -47,6 +47,7 @@ interface LocationContextType {
 // Props for the LocationProvider component
 interface LocationProviderProps {
   children: ReactNode;
+  onLocationsChange?: (locations: SelectionsData | null) => void;
 }
 
 // Create the location context with default values
@@ -68,7 +69,7 @@ const LocationContext = createContext<LocationContextType>({
 });
 
 // Create the provider component
-export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) => {
+export const LocationProvider: React.FC<LocationProviderProps> = ({ children, onLocationsChange }) => {
   // State for location data
   const [states, setStates] = useState<State[]>([]);
   const [districts, setDistricts] = useState<District[]>([]);
@@ -246,12 +247,19 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
       selectedSubDistricts.includes(Number(subDistrict.id))
     );
     
-    setSelectionsLocked(true);
-    
-    return {
+    const selectedData: SelectionsData = {
       subDistricts: selectedSubDistrictObjects,
       totalPopulation
     };
+    
+    setSelectionsLocked(true);
+    
+    // Call the onLocationsChange prop if it exists
+    if (onLocationsChange) {
+      onLocationsChange(selectedData);
+    }
+    
+    return selectedData;
   };
   
   // Reset all selections
@@ -261,6 +269,11 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
     setSelectedSubDistricts([]);
     setTotalPopulation(0);
     setSelectionsLocked(false);
+    
+    // Notify parent component about the reset
+    if (onLocationsChange) {
+      onLocationsChange(null);
+    }
   };
   
   // Context value

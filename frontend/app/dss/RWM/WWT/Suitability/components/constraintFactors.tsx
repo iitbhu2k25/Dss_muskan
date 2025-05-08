@@ -1,7 +1,6 @@
 'use client'
 import React from 'react';
-import { useConstraintFactors } from '../../../../../contexts/Suitability/constraintContext';
-import { ConstraintFactor } from '../../../../../contexts/Suitability/constraintContext';
+import { useConstraintFactors, ConstraintFactor } from '../../../../../contexts/Suitability/constraintContext';
 
 interface ConstraintFactorsProps {
   onFactorsChange?: (factors: ConstraintFactor[]) => void;
@@ -10,14 +9,17 @@ interface ConstraintFactorsProps {
 const ConstraintFactors: React.FC<ConstraintFactorsProps> = ({ onFactorsChange }) => {
   const { factors, loading, updateFactors } = useConstraintFactors();
 
-  // Group factors by category
-  const factorsByCategory = factors.reduce((acc, factor) => {
-    if (!acc[factor.category]) {
-      acc[factor.category] = [];
-    }
-    acc[factor.category].push(factor);
-    return acc;
-  }, {} as { [key: string]: ConstraintFactor[] });
+  // Group factors by category with explicit type annotation
+  const factorsByCategory: Record<string, ConstraintFactor[]> = React.useMemo(() => {
+    return factors.reduce((acc: Record<string, ConstraintFactor[]>, factor) => {
+      const category = factor.category || 'Uncategorized';
+      if (!acc[category]) {
+        acc[category] = [];
+      }
+      acc[category].push(factor);
+      return acc;
+    }, {});
+  }, [factors]);
 
   const handleFactorToggle = (id: string) => {
     const updatedFactors = factors.map(factor => 

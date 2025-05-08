@@ -133,25 +133,8 @@ const MapComponent: React.FC<MapProps> = ({ selectedLocations }) => {
         className="flex-1 border border-gray-200 rounded-md mb-4 min-h-96 bg-gray-50"
       ></div>
       
-      <div className="flex justify-between">
-        <div className="bg-gray-50 rounded-md p-3 w-1/2 mr-2">
-          <div className="flex justify-between items-center mb-3">
-            <h3 className="text-sm font-semibold">Active Layers</h3>
-            <button className="text-xl text-gray-500">×</button>
-          </div>
-          
-          <div className="flex items-center mb-2 text-sm">
-            <span className="text-blue-500 mr-2">●</span> Primary Layer
-            <span className="ml-auto bg-blue-100 text-blue-800 px-2 rounded-full text-xs">37</span>
-          </div>
-          
-          <div className="flex items-center text-sm">
-            <span className="text-gray-500 mr-2">●</span> Base Map
-            <span className="ml-auto">OpenStreetMap</span>
-          </div>
-        </div>
-        
-        <div className="w-1/2 ml-2">
+      <div className="flex justify-between">   
+        <div className="w-1/4 ml-2">
           <div className="text-sm mb-2">Quick Base Map Switch</div>
           <div className="grid grid-cols-3 gap-1">
             <button 

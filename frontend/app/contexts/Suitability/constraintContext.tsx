@@ -25,13 +25,28 @@ export const ConstraintFactorsProvider: React.FC<{ children: React.ReactNode }> 
     const fetchFactors = async () => {
       setLoading(true);
       try {
-        // Replace with actual API call
-        // const response = await fetch('/api/constraint-factors');
-        // const data = await response.json();
-        // setFactors(data);
-        setFactors([]);
+        // Fetch constraint factors from API
+        const response = await fetch('http://localhost:7000/api/stp/get_constraint_factors');
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        // Transform the data to match your ConstraintFactor interface if needed
+        const formattedData: ConstraintFactor[] = data.map((item: any) => ({
+          id: item.id.toString(),
+          name: item.name,
+          description: item.description || '',
+          selected: false, // Default to not selected
+          category: item.category || 'General'
+        }));
+        
+        setFactors(formattedData);
       } catch (error) {
         console.error('Error fetching constraint factors:', error);
+        // Set to empty array in case of error
+        setFactors([]);
       } finally {
         setLoading(false);
       }
