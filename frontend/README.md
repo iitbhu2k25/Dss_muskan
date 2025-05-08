@@ -157,15 +157,15 @@ app.addControl('scale');
 ```javascript
 // Listen for events
 app.on('click', e => {
-  console.log('Clicked at:', e.latlng);
+  //console.log('Clicked at:', e.latlng);
 });
 
 app.on('dataload', data => {
-  console.log('Data loaded:', data);
+  //console.log('Data loaded:', data);
 });
 
 app.on('analyze:complete', result => {
-  console.log('Analysis complete:', result);
+  //console.log('Analysis complete:', result);
 });
 ```
 

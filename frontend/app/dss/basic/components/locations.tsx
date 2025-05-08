@@ -29,7 +29,7 @@ interface LocationSelectorProps {
   }) => void;
 }
 
-const LocationSelector: React.FC<LocationSelectorProps> = ({ onConfirm }) => {
+const LocationSelector: React.FC<LocationSelectorProps> = ({ onConfirm, onReset }) => {
   // States for dropdown data
   const [states, setStates] = useState<LocationItem[]>([]);
   const [districts, setDistricts] = useState<District[]>([]);
@@ -56,7 +56,6 @@ const LocationSelector: React.FC<LocationSelectorProps> = ({ onConfirm }) => {
         }
         
         const data = await response.json();
-        console.log('API response data:', data);
         const stateData: LocationItem[] = data.map((state: any) => ({
           id: state.state_code,
           name: state.state_name
@@ -74,7 +73,6 @@ const LocationSelector: React.FC<LocationSelectorProps> = ({ onConfirm }) => {
   useEffect(() => {
     if (selectedState) {
       const fetchDistricts = async (): Promise<void> => {
-        console.log('Fetching districts for state:', selectedState);
         try {
           const response = await fetch('http://localhost:9000/api/basic/district/',
             {
@@ -86,7 +84,6 @@ const LocationSelector: React.FC<LocationSelectorProps> = ({ onConfirm }) => {
             }
           );
           const data = await response.json();
-          console.log('API response data:', data);
           const districtData: LocationItem[] = data.map((district: any) => ({
             id: district.district_code,
             name: district.district_name
@@ -131,7 +128,6 @@ const LocationSelector: React.FC<LocationSelectorProps> = ({ onConfirm }) => {
             }
           );
           const data = await response.json();
-          console.log('API response data:', data);
           const subDistrictData: LocationItem[] = data.map((subDistrict: any) => ({
             id: subDistrict.subdistrict_code,
             name: subDistrict.subdistrict_name
@@ -179,7 +175,6 @@ const LocationSelector: React.FC<LocationSelectorProps> = ({ onConfirm }) => {
             }
           );
           const data = await response.json();
-          console.log('API response data:', data);
           const villageData: Village[] = data.map((village: any) => ({
             id: village.village_code,
             name: village.village_name,
@@ -230,13 +225,18 @@ const LocationSelector: React.FC<LocationSelectorProps> = ({ onConfirm }) => {
   };
 
   // Handle form reset
-  const handleReset = (): void => {
-    setSelectedState('');
-    setSelectedDistricts([]);
-    setSelectedSubDistricts([]);
-    setSelectedVillages([]);
-    setTotalPopulation(0);
-    setSelectionsLocked(false); // Also unlock selections when resetting
+  const handleReset = (): void => { 
+    setSelectedState(''); 
+    setSelectedDistricts([]); 
+    setSelectedSubDistricts([]); 
+    setSelectedVillages([]); 
+    setTotalPopulation(0); 
+    setSelectionsLocked(false);
+    
+    // Call the onReset prop to notify parent component
+    if (onReset) {
+      onReset();
+    }
   };
 
   // Handle confirm - lock the selections and pass data to parent

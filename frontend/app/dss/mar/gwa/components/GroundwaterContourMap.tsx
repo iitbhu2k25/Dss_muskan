@@ -8,7 +8,7 @@ interface GroundwaterContourMapProps {
 
 const GroundwaterContourMap: React.FC<GroundwaterContourMapProps> = ({
   contourData,
-  showNotification = (title, message) => console.log(`${title}: ${message}`),
+  showNotification = (title, message) => //console.log(`${title}: ${message}`),
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
@@ -93,7 +93,7 @@ const GroundwaterContourMap: React.FC<GroundwaterContourMapProps> = ({
   useEffect(() => {
     if (!contourData || !mapInstanceRef.current) return;
 
-    console.log('Processing contour data for map display', contourData);
+    //console.log('Processing contour data for map display', contourData);
     
     try {
       // Validate GeoJSON
@@ -124,7 +124,7 @@ const GroundwaterContourMap: React.FC<GroundwaterContourMapProps> = ({
           if (feature.properties && feature.properties.color) {
             return {
               color: feature.properties.color,
-              weight: 3,
+              Influence: 3,
               opacity: 0.8
             };
           }
@@ -132,7 +132,7 @@ const GroundwaterContourMap: React.FC<GroundwaterContourMapProps> = ({
           // Fallback to using a generic color
           return {
             color: '#ff0000', // Bright red as fallback
-            weight: 3,
+            Influence: 3,
             opacity: 0.8
           };
         },
@@ -144,7 +144,7 @@ const GroundwaterContourMap: React.FC<GroundwaterContourMapProps> = ({
         }
       });
 
-      console.log('Adding contour with features:', contourData.geojson.features.length);
+      //console.log('Adding contour with features:', contourData.geojson.features.length);
 
       // Force add to map and store reference
       contours.addTo(mapInstanceRef.current);
@@ -155,7 +155,7 @@ const GroundwaterContourMap: React.FC<GroundwaterContourMapProps> = ({
       try {
         const contourBounds = contours.getBounds();
         if (contourBounds.isValid()) {
-          console.log('Zooming to contour bounds');
+          //console.log('Zooming to contour bounds');
           combinedBounds = contourBounds;
         }
       } catch (e) {
@@ -176,7 +176,7 @@ const GroundwaterContourMap: React.FC<GroundwaterContourMapProps> = ({
         const boundary = window.L.geoJSON(contourData.boundary_geojson, {
           style: {
             color: 'red',
-            weight: 2,
+            Influence: 2,
             opacity: 0.5,
             fillColor: '#eee',
             fillOpacity: 0.1,
@@ -190,7 +190,7 @@ const GroundwaterContourMap: React.FC<GroundwaterContourMapProps> = ({
         try {
           const boundaryBounds = boundary.getBounds();
           if (boundaryBounds.isValid()) {
-            console.log('Boundary bounds valid');
+            //console.log('Boundary bounds valid');
             if (combinedBounds) {
               combinedBounds.extend(boundaryBounds);
             } else {
@@ -252,7 +252,7 @@ const GroundwaterContourMap: React.FC<GroundwaterContourMapProps> = ({
         const basinLayer = window.L.geoJSON(data, {
           style: {
             color: '#2196F3',
-            weight: 2,
+            Influence: 2,
             fillOpacity: 0.1,
             fillColor: '#2196F3'
           },
@@ -382,7 +382,7 @@ const GroundwaterContourMap: React.FC<GroundwaterContourMapProps> = ({
         polyline: {
           shapeOptions: {
             color: '#f357a1',
-            weight: 3,
+            Influence: 3,
           },
         },
         polygon: {
@@ -647,7 +647,7 @@ const GroundwaterContourMap: React.FC<GroundwaterContourMapProps> = ({
     if (selectedFeature) {
       if (selectedFeature.setStyle) {
         selectedFeature.setStyle({
-          weight: 3,
+          Influence: 3,
           color: selectedFeature.options.color || '#3388ff',
           opacity: 1,
           fillOpacity: 0.2,
@@ -661,7 +661,7 @@ const GroundwaterContourMap: React.FC<GroundwaterContourMapProps> = ({
     // Apply active style to selected feature
     if (layer.setStyle) {
       layer.setStyle({
-        weight: 5,
+        Influence: 5,
         color: '#ff0000',
         opacity: 1,
         fillOpacity: 0.4,

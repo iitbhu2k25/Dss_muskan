@@ -53,7 +53,7 @@ const GroundwaterSustainability: React.FC<GroundwaterSustainabilityProps> = ({ a
   
   const handlePlot = () => {
     // Placeholder for plot functionality
-    console.log('Plotting data...');
+    //console.log('Plotting data...');
   };
 
   // Close tooltip when clicking outside

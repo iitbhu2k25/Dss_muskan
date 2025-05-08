@@ -64,7 +64,7 @@ const TimeSeriesAnalysis: React.FC<TimeSeriesAnalysisProps> = ({ activeTab }) =>
   
   const handlePlot = () => {
     // Placeholder for plot functionality
-    console.log('Plotting data...');
+    //console.log('Plotting data...');
   };
 
   const handleForecastingMethodChange = (method: string) => {

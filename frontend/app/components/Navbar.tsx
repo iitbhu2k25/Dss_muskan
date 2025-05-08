@@ -104,134 +104,131 @@ const Navbar = (): JSX.Element => {
               </Link>
             </li>
 
-            <li className="relative group" style={{zIndex: 9999}}>
-  <button
-    onClick={() => toggleDropdown('gwm')}
-    className="text-white font-semibold text-lg px-5 py-2 inline-block relative hover:translate-y-[-2px] transition-all duration-300 hover:after:w-full after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-blue-600 after:transition-all after:duration-300">
-    GWM 
-    <span className="absolute top-[-35px] left-1/2 transform -translate-x-1/2 bg-orange-500 bg-opacity-90 text-white px-3 py-1 rounded-md text-sm whitespace-nowrap opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 after:content-[''] after:absolute after:top-full after:left-1/2 after:ml-[-5px] after:border-[5px] after:border-solid after:border-t-blue-900 after:border-r-transparent after:border-b-transparent after:border-l-transparent">
-      Ground Water Management
-    </span>
-  </button>
-  <div className="absolute left-0 top-full" style={{zIndex: 9999}}>
-    <ul className={`${openDropdowns.gwm ? 'block' : 'hidden'} lg:hidden lg:group-hover:block bg-white bg-opacity-95 border border-gray-200 border-opacity-10 rounded-lg shadow-lg min-w-[400px] p-3`} style={{zIndex: 9999}}>
-      {/* Groundwater Potential Assessment */}
-      <li className="relative group/submenu" style={{zIndex: 9999}}>
-        <div
-          className="w-full text-left px-4 py-2 text-blue-600 font-semibold hover:bg-blue-50 hover:bg-opacity-10 rounded-md transition duration-200 flex justify-between items-center cursor-pointer"
-          onClick={(e) => toggleSubmenu(e, 'gwPotential')}
-        >
-          Groundwater Potential Assessment
-          <ChevronRight className={`w-4 h-4 ${openDropdowns.gwPotential ? 'rotate-90' : ''} lg:group-hover/submenu:rotate-90 transition-transform duration-200`} />
-        </div>
-        <div className="lg:absolute lg:left-full lg:top-0" style={{zIndex: 9999}}>
-          <ul className={`${openDropdowns.gwPotential ? 'block' : 'hidden'} lg:hidden lg:group-hover/submenu:block bg-white bg-opacity-95 border border-gray-200 border-opacity-10 rounded-lg shadow-lg min-w-[300px] p-3 lg:ml-1 ml-4`} style={{zIndex: 9999}}>
-            <li>
-              <Link href="#" className="block px-4 py-2 text-blue-600 font-semibold hover:bg-blue-50 hover:bg-opacity-10 rounded-md transition duration-200">
-                Pumping Location Identification
-              </Link>
-            </li>
-            <li>
-              <Link href="#" className="block px-4 py-2 text-blue-600 font-semibold hover:bg-blue-50 hover:bg-opacity-10 rounded-md transition duration-200">
-                GW Potential Zone
-              </Link>
-            </li>
-          </ul>
-        </div>
-      </li>
+            {/* GWM */}
+            <li className="relative group">
+              <button
+                onClick={() => toggleDropdown('gwm')}
+                className="text-white font-semibold text-lg px-5 py-2 inline-block relative hover:translate-y-[-2px] transition-all duration-300 hover:after:w-full after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-blue-600 after:transition-all after:duration-300">
+                GWM 
+                <span className="absolute top-[-35px] left-1/2 transform -translate-x-1/2 bg-orange-500 bg-opacity-90 text-white px-3 py-1 rounded-md text-sm whitespace-nowrap opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 after:content-[''] after:absolute after:top-full after:left-1/2 after:ml-[-5px] after:border-[5px] after:border-solid after:border-t-blue-900 after:border-r-transparent after:border-b-transparent after:border-l-transparent">
+                  Ground Water Management
+                </span>
+              </button>
+              <ul className={`${openDropdowns.gwm ? 'block' : 'hidden'} lg:hidden lg:group-hover:block absolute left-0 top-full bg-white bg-opacity-95 border border-gray-200 border-opacity-10 rounded-lg shadow-lg min-w-[400px] p-3 z-50`}>
+                {/* Groundwater Potential Assessment */}
+                <li className="relative group/submenu">
+                  <div
+                    className="w-full text-left px-4 py-2 text-blue-600 font-semibold hover:bg-blue-50 hover:bg-opacity-10 rounded-md transition duration-200 flex justify-between items-center cursor-pointer"
+                    onClick={(e) => toggleSubmenu(e, 'gwPotential')}
+                  >
+                    Groundwater Potential Assessment
+                    <ChevronRight className={`w-4 h-4 ${openDropdowns.gwPotential ? 'rotate-90' : ''} lg:group-hover/submenu:rotate-90 transition-transform duration-200`} />
+                  </div>
+                  <ul className={`${openDropdowns.gwPotential ? 'block' : 'hidden'} lg:hidden lg:group-hover/submenu:block lg:absolute lg:left-full lg:top-0 lg:bg-white lg:bg-opacity-95 lg:border lg:border-gray-200 lg:border-opacity-10 lg:rounded-lg lg:shadow-lg lg:min-w-[300px] lg:p-3 lg:ml-1 lg:z-50 ml-4`}>
+                    <li>
+                      <Link href="#" className="block px-4 py-2 text-blue-600 font-semibold hover:bg-blue-50 hover:bg-opacity-10 rounded-md transition duration-200">
+                        Pumping Location Identification
+                      </Link>
+                    </li>
+                    <li>
+                      <Link href="/dss/ground_water" className="block px-4 py-2 text-blue-600 font-semibold hover:bg-blue-50 hover:bg-opacity-10 rounded-md transition duration-200">
+                        GW Potential Zone
+                      </Link>
+                    </li>
+                  </ul>
+                </li>
 
-      {/* Resource Estimation */}
-      <li className="relative group/submenu" style={{zIndex: 9999}}>
-        <div
-          className="w-full text-left px-4 py-2 text-blue-600 font-semibold hover:bg-blue-50 hover:bg-opacity-10 rounded-md transition duration-200 flex justify-between items-center cursor-pointer"
-          onClick={(e) => toggleSubmenu(e, 'gwResource')}
-        >
-          Resource Estimation
-          <ChevronRight className={`w-4 h-4 ${openDropdowns.gwResource ? 'rotate-90' : ''} lg:group-hover/submenu:rotate-90 transition-transform duration-200`} />
-        </div>
-        <div className="lg:absolute lg:left-full lg:top-0" style={{zIndex: 9999}}>
-          <ul className={`${openDropdowns.gwResource ? 'block' : 'hidden'} lg:hidden lg:group-hover/submenu:block bg-white bg-opacity-95 border border-gray-200 border-opacity-10 rounded-lg shadow-lg min-w-[320px] p-3 lg:ml-1 ml-4`} style={{zIndex: 9999}}>
-            <li>
-              <Link href="#" className="block px-4 py-2 text-blue-600 font-semibold hover:bg-blue-50 hover:bg-opacity-10 rounded-md transition duration-200">
-                Regional Scale Quantification
-              </Link>
-            </li>
-            <li>
-              <Link href="#" className="block px-4 py-2 text-blue-600 font-semibold hover:bg-blue-50 hover:bg-opacity-10 rounded-md transition duration-200">
-                Water Quality Assessment
-              </Link>
-            </li>
-            <li>
-              <Link href="#" className="block px-4 py-2 text-blue-600 font-semibold hover:bg-blue-50 hover:bg-opacity-10 rounded-md transition duration-200">
-                Identification Of Vulnerable zones
-              </Link>
-            </li>
-          </ul>
-        </div>
-      </li>
+                {/* Resource Estimation */}
+                <li className="relative group/submenu">
+                  <div
+                    className="w-full text-left px-4 py-2 text-blue-600 font-semibold hover:bg-blue-50 hover:bg-opacity-10 rounded-md transition duration-200 flex justify-between items-center cursor-pointer"
+                    onClick={(e) => toggleSubmenu(e, 'gwResource')}
+                  >
+                    Resource Estimation
+                    <ChevronRight className={`w-4 h-4 ${openDropdowns.gwResource ? 'rotate-90' : ''} lg:group-hover/submenu:rotate-90 transition-transform duration-200`} />
+                  </div>
+                  <ul className={`${openDropdowns.gwResource ? 'block' : 'hidden'} lg:hidden lg:group-hover/submenu:block lg:absolute lg:left-full lg:top-0 lg:bg-white lg:bg-opacity-95 lg:border lg:border-gray-200 lg:border-opacity-10 lg:rounded-lg lg:shadow-lg lg:min-w-[320px] lg:p-3 lg:ml-1 lg:z-50 ml-4`}>
+                    <li>
+                      <Link href="#" className="block px-4 py-2 text-blue-600 font-semibold hover:bg-blue-50 hover:bg-opacity-10 rounded-md transition duration-200">
+                        Regional Scale Quantification
+                      </Link>
+                    </li>
+                    <li>
+                      <Link href="#" className="block px-4 py-2 text-blue-600 font-semibold hover:bg-blue-50 hover:bg-opacity-10 rounded-md transition duration-200">
+                        Water Quality Assessment
+                      </Link>
+                    </li>
+                    <li>
+                      <Link href="#" className="block px-4 py-2 text-blue-600 font-semibold hover:bg-blue-50 hover:bg-opacity-10 rounded-md transition duration-200">
+                        Identification Of Vulnerable zones
+                      </Link>
+                    </li>
+                  </ul>
+                </li>
 
-      {/* Managed Aquifer Recharge */}
-      <li className="relative group/submenu" style={{zIndex: 9999}}>
-        <div
-          className="w-full text-left px-4 py-2 text-blue-600 font-semibold hover:bg-blue-50 hover:bg-opacity-10 rounded-md transition duration-200 flex justify-between items-center cursor-pointer"
-          onClick={(e) => toggleSubmenu(e, 'gwAquifer')}
-        >
-          Managed Aquifer Recharge
-          <ChevronRight className={`w-4 h-4 ${openDropdowns.gwAquifer ? 'rotate-90' : ''} lg:group-hover/submenu:rotate-90 transition-transform duration-200`} />
-        </div>
-        <div className="lg:absolute lg:left-full lg:top-0" style={{zIndex: 9999}}>
-          <ul className={`${openDropdowns.gwAquifer ? 'block' : 'hidden'} lg:hidden lg:group-hover/submenu:block bg-white bg-opacity-95 border border-gray-200 border-opacity-10 rounded-lg shadow-lg min-w-[300px] p-3 lg:ml-1 ml-4`} style={{zIndex: 9999}}>
-            <li>
-              <Link href="/dss/mar/gwa" className="block px-4 py-2 text-blue-600 font-semibold hover:bg-blue-50 hover:bg-opacity-10 rounded-md transition duration-200">
-                Ground Water Assessment
-              </Link>
-            </li>
-            <li>
-              <Link href="#" className="block px-4 py-2 text-blue-600 font-semibold hover:bg-blue-50 hover:bg-opacity-10 rounded-md transition duration-200">
-                Surface Water Assessment
-              </Link>
-            </li>
-            <li>
-              <Link href="#" className="block px-4 py-2 text-blue-600 font-semibold hover:bg-blue-50 hover:bg-opacity-10 rounded-md transition duration-200">
-                Climate Change
-              </Link>
-            </li>
-            <li>
-              <Link href="#" className="block px-4 py-2 text-blue-600 font-semibold hover:bg-blue-50 hover:bg-opacity-10 rounded-md transition duration-200">
-                Optimized Solution
-              </Link>
-            </li>
-          </ul>
-        </div>
-      </li>
+                {/* Managed Aquifer Recharge */}
+                <li className="relative group/submenu">
+                  <div
+                    className="w-full text-left px-4 py-2 text-blue-600 font-semibold hover:bg-blue-50 hover:bg-opacity-10 rounded-md transition duration-200 flex justify-between items-center cursor-pointer"
+                    onClick={(e) => toggleSubmenu(e, 'gwAquifer')}
+                  >
+                    Managed Aquifer Recharge
+                    <ChevronRight className={`w-4 h-4 ${openDropdowns.gwAquifer ? 'rotate-90' : ''} lg:group-hover/submenu:rotate-90 transition-transform duration-200`} />
+                  </div>
+                  <ul className={`${openDropdowns.gwAquifer ? 'block' : 'hidden'} lg:hidden lg:group-hover/submenu:block lg:absolute lg:left-full lg:top-0 lg:bg-white lg:bg-opacity-95 lg:border lg:border-gray-200 lg:border-opacity-10 lg:rounded-lg lg:shadow-lg lg:min-w-[300px] lg:p-3 lg:ml-1 lg:z-50 ml-4`}>
+                    <li>
+                      <Link href="/dss/MAR/gwa" className="block px-4 py-2 text-blue-600 font-semibold hover:bg-blue-50 hover:bg-opacity-10 rounded-md transition duration-200">
+                        Ground Water Assessment
+                      </Link>
+                    </li>
+                    <li>
+                      <Link href="#" className="block px-4 py-2 text-blue-600 font-semibold hover:bg-blue-50 hover:bg-opacity-10 rounded-md transition duration-200">
+                      Surface Water Assessment
+                      </Link>
+                    </li>
+                    <li>
+                      <Link href="#" className="block px-4 py-2 text-blue-600 font-semibold hover:bg-blue-50 hover:bg-opacity-10 rounded-md transition duration-200">
+                        Climate Change
+                      </Link>
+                    </li>
+                    <li>
+                      <Link href="#" className="block px-4 py-2 text-blue-600 font-semibold hover:bg-blue-50 hover:bg-opacity-10 rounded-md transition duration-200">
+                        Site suitability For MAR
+                      </Link>
+                    </li>
+                    <li>
+                      <Link href="#" className="block px-4 py-2 text-blue-600 font-semibold hover:bg-blue-50 hover:bg-opacity-10 rounded-md transition duration-200">
+                        Optimized Solution
+                      </Link>
+                    </li>
+                  </ul>
+                </li>
 
-      {/* River Aquifer Interaction */}
-      <li className="relative group/submenu" style={{zIndex: 9999}}>
-        <div
-          className="w-full text-left px-4 py-2 text-blue-600 font-semibold hover:bg-blue-50 hover:bg-opacity-10 rounded-md transition duration-200 flex justify-between items-center cursor-pointer"
-          onClick={(e) => toggleSubmenu(e, 'gwRiver')}
-        >
-          River Aquifer Interaction
-          <ChevronRight className={`w-4 h-4 ${openDropdowns.gwRiver ? 'rotate-90' : ''} lg:group-hover/submenu:rotate-90 transition-transform duration-200`} />
-        </div>
-        <div className="lg:absolute lg:left-full lg:top-0" style={{zIndex: 9999}}>
-          <ul className={`${openDropdowns.gwRiver ? 'block' : 'hidden'} lg:hidden lg:group-hover/submenu:block bg-white bg-opacity-95 border border-gray-200 border-opacity-10 rounded-lg shadow-lg min-w-[300px] p-3 lg:ml-1 ml-4`} style={{zIndex: 9999}}>
-            <li>
-              <Link href="#" className="block px-4 py-2 text-blue-600 font-semibold hover:bg-blue-50 hover:bg-opacity-10 rounded-md transition duration-200">
-                Baseflow Estimation
-              </Link>
+                {/* River Aquifer Interaction */}
+                <li className="relative group/submenu">
+                  <div
+                    className="w-full text-left px-4 py-2 text-blue-600 font-semibold hover:bg-blue-50 hover:bg-opacity-10 rounded-md transition duration-200 flex justify-between items-center cursor-pointer"
+                    onClick={(e) => toggleSubmenu(e, 'gwRiver')}
+                  >
+                    River Aquifer Interaction
+                    <ChevronRight className={`w-4 h-4 ${openDropdowns.gwRiver ? 'rotate-90' : ''} lg:group-hover/submenu:rotate-90 transition-transform duration-200`} />
+                  </div>
+                  <ul className={`${openDropdowns.gwRiver ? 'block' : 'hidden'} lg:hidden lg:group-hover/submenu:block lg:absolute lg:left-full lg:top-0 lg:bg-white lg:bg-opacity-95 lg:border lg:border-gray-200 lg:border-opacity-10 lg:rounded-lg lg:shadow-lg lg:min-w-[300px] lg:p-3 lg:ml-1 lg:z-50 ml-4`}>
+                    <li>
+                      <Link href="#" className="block px-4 py-2 text-blue-600 font-semibold hover:bg-blue-50 hover:bg-opacity-10 rounded-md transition duration-200">
+                        Baseflow Estimation
+                      </Link>
+                    </li>
+                    <li>
+                      <Link href="#" className="block px-4 py-2 text-blue-600 font-semibold hover:bg-blue-50 hover:bg-opacity-10 rounded-md transition duration-200">
+                        Climate Change and Mitigation
+                      </Link>
+                    </li>
+                  </ul>
+                </li>
+              </ul>
             </li>
-            <li>
-              <Link href="#" className="block px-4 py-2 text-blue-600 font-semibold hover:bg-blue-50 hover:bg-opacity-10 rounded-md transition duration-200">
-                Climate Change and Mitigation
-              </Link>
-            </li>
-          </ul>
-        </div>
-      </li>
-    </ul>
-  </div>
-</li>
+
             {/* RWM */}
             <li className="relative group">
               <button
@@ -358,13 +355,13 @@ const Navbar = (): JSX.Element => {
                       </Link>
                     </li>
                     <li>
-                      <Link href="/dss/riverwatermangement/wastewatertreatment/stp" className="block px-4 py-2 text-blue-600 font-semibold hover:bg-blue-50 hover:bg-opacity-10 rounded-md transition duration-200">
-                        Site Priority
+                      <Link href="/dss/RWM/WWT/STP" className="block px-4 py-2 text-blue-600 font-semibold hover:bg-blue-50 hover:bg-opacity-10 rounded-md transition duration-200">
+                        STP Priority 
                       </Link>
                     </li>
-                     <li>
-                      <Link href="/dss/riverwatermangement/wastewatertreatment/suitability" className="block px-4 py-2 text-blue-600 font-semibold hover:bg-blue-50 hover:bg-opacity-10 rounded-md transition duration-200">
-                        Site Suitability
+                    <li>
+                      <Link href="/dss/RWM/WWT/Suitability" className="block px-4 py-2 text-blue-600 font-semibold hover:bg-blue-50 hover:bg-opacity-10 rounded-md transition duration-200">
+                        STP Suitability
                       </Link>
                     </li>
                     <li>
@@ -559,12 +556,12 @@ const Navbar = (): JSX.Element => {
               </button>
               <ul className={`${openDropdowns.visualization ? 'block' : 'hidden'} lg:hidden lg:group-hover:block absolute left-0 top-full bg-white bg-opacity-95 border border-gray-200 border-opacity-10 rounded-lg shadow-lg min-w-[150px] p-3 z-50`}>
                 <li>
-                  <Link href="/dss/vector_visual" className="block px-4 py-2 text-blue-600 font-semibold hover:bg-blue-50 hover:bg-opacity-10 rounded-md transition duration-200">
+                  <Link href="/dss/visualizations/vector_visual" className="block px-4 py-2 text-blue-600 font-semibold hover:bg-blue-50 hover:bg-opacity-10 rounded-md transition duration-200">
                     Vector
                   </Link>
                 </li>
                 <li>
-                  <Link href="/dss/raster_visual" className="block px-4 py-2 text-blue-600 font-semibold hover:bg-blue-50 hover:bg-opacity-10 rounded-md transition duration-200">
+                  <Link href="/dss/visualizations/raster_visual" className="block px-4 py-2 text-blue-600 font-semibold hover:bg-blue-50 hover:bg-opacity-10 rounded-md transition duration-200">
                     Raster
                   </Link>
                 </li>

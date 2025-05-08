@@ -31,8 +31,8 @@ INSTALLED_APPS = [
     "corsheaders",
     "Basic",
     "raster_visual",
-    "gwa",
-    "stp_suitability",
+    "GWM",
+    
 ]
 
 MIDDLEWARE = [
@@ -129,12 +129,24 @@ CORS_ALLOWED_ORIGINS = [
     "http://172.168.32.60:3000",  # Your React app's address
 ]
 
-
 # Optional: Allow credentials (cookies, etc.) if needed
-CORS_ALLOW_CREDENTIALS = False
+CORS_ALLOW_CREDENTIALS = True
 
+# If you need specific headers, especially for authentication
+CORS_ALLOW_HEADERS = [
+    "accept",
+    "accept-encoding",
+    "authorization",
+    "content-type",
+    "dnt",
+    "origin",
+    "user-agent",
+    "x-csrftoken",
+    "x-requested-with",
+]
 
-
-# For serving media files (optional setup)
-MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+GEOSERVER_URL=os.environ.get('GEOSERVER_URL')
+GEOSERVER_WORKSPACE=os.environ.get('GEOSERVER_WORKSPACE')
+GEOSERVER_USERNAME=os.environ.get('GEOSERVER_USERNAME')
+GEOSERVER_PASSWORD=os.environ.get('GEOSERVER_PASSWORD')
+GEOSERVER_EX_URL=os.environ.get('GEOSERVER_EX_URL')

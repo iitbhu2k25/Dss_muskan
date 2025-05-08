@@ -1,9 +1,9 @@
 // app/layout.tsx
 import { ReactNode } from 'react';
 import './globals.css';
-import Header from './components/Header';
-import Navbar from './components/Navbar';
-import Footer from './components/Footer';
+import Header from '@/app/components/Header';
+import Navbar from '@/app/components/Navbar';
+import Footer from '@/app/components/Footer';
 
 interface RootLayoutProps {
   children: ReactNode;

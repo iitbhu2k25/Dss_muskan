@@ -16,9 +16,10 @@ export interface RasterMetadata {
 }
 
 export interface RasterLayerProps {
-  raster: RasterMetadata;
+  id: string;
   visible: boolean;
-  opacity: number;
+  url?: string;
+  opacity?: number; // We'll fetch this separately
 }
 
 export type MapLibrary = 'openlayers' | 'leaflet';

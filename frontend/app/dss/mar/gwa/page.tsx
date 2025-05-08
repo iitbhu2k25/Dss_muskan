@@ -87,31 +87,31 @@ const Dashboard: React.FC = () => {
   
   // Function to show notifications
   const showNotification = (title: string, message: string, type: string = 'info') => {
-    console.log(`${title}: ${message} (${type})`);
+    //console.log(`${title}: ${message} (${type})`);
     // You can implement a proper notification system here if you have one
   };
 
   // Function to handle contour data from GroundwaterContour component
   const handleContourData = (data: any) => {
-    console.log('Contour data received in Dashboard:', data);
+    //console.log('Contour data received in Dashboard:', data);
     setContourData(data);
   };
 
   // Function to handle trend data
   const handleTrendData = (data: any) => {
-    console.log('Trend data received in Dashboard:', data);
+    //console.log('Trend data received in Dashboard:', data);
     setTrendData(data);
   };
 
   // Function to handle time series data
   const handleTimeSeriesData = (data: any) => {
-    console.log('Time series data received in Dashboard:', data);
+    //console.log('Time series data received in Dashboard:', data);
     setTimeSeriesData(data);
   };
 
   // Function to handle recharge data
   const handleRechargeData = (data: any) => {
-    console.log('Recharge data received in Dashboard:', data);
+    //console.log('Recharge data received in Dashboard:', data);
     setRechargeData(data);
   };
 

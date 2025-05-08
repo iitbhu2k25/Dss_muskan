@@ -94,7 +94,7 @@
   
 //   const handlePlot = () => {
 //     // Placeholder for plot functionality
-//     console.log('Plotting data...');
+//     //console.log('Plotting data...');
 //   };
 
 //   const handleForecastingMethodChange = (method: string) => {
@@ -309,7 +309,7 @@
 //           onChange={(e) => setInterpolationMethod(e.target.value)}
 //         >
 //           <option value="">Select Method...</option>
-//           <option value="idw">Inverse Distance Weighted</option>
+//           <option value="idw">Inverse Distance Influenceed</option>
 //           <option value="kriging">Kriging</option>
 //           <option value="spline">Spline</option>
 //         </select>
@@ -975,7 +975,7 @@
 //                   </button>
 //                   <button
 //                     className="flex-1 bg-blue-500 text-white text-sm py-1 px-3 rounded-md flex items-center justify-center"
-//                     onClick={() => console.log('Plot Time Series')}
+//                     onClick={() => //console.log('Plot Time Series')}
 //                   >
 //                     <span>Plot Time Series</span>
 //                   </button>

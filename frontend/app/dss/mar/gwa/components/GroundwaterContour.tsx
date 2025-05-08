@@ -64,7 +64,7 @@ const GroundwaterContour: React.FC<GroundwaterContourProps> = ({
       setIsLoading(true);
       setError(null);
       
-      console.log('Sending contour request with payload:', payload);
+      //console.log('Sending contour request with payload:', payload);
       
       // Updated URL to the new endpoint
       const response = await fetch('http://localhost:9000/api/gwa/contour/', {
@@ -76,7 +76,7 @@ const GroundwaterContour: React.FC<GroundwaterContourProps> = ({
         body: JSON.stringify(payload)
       });
 
-      console.log('Response status:', response.status);
+      //console.log('Response status:', response.status);
 
       if (!response.ok) {
         // Try to get detailed error if available
@@ -94,7 +94,7 @@ const GroundwaterContour: React.FC<GroundwaterContourProps> = ({
       }
 
       const data = await response.json();
-      console.log('Contour data received successfully:', data);
+      //console.log('Contour data received successfully:', data);
       
       setGeoJsonData(data);
       
@@ -143,7 +143,7 @@ const GroundwaterContour: React.FC<GroundwaterContourProps> = ({
           onChange={(e) => setInterpolationMethod(e.target.value)}
         >
           <option value="">Select Method...</option>
-          <option value="idw">Inverse Distance Weighted</option>
+          <option value="idw">Inverse Distance Influenceed</option>
           <option value="kriging">Kriging</option>
           <option value="spline">Spline</option>
         </select>

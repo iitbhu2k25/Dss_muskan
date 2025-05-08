@@ -76,11 +76,11 @@ const DataSelection: React.FC<DataSelectionProps> = ({
     window.dispatchEvent(new CustomEvent('geoJsonLoadingStart'));
     
     try {
-      console.log(`Fetching GeoJSON for well ID: ${wellId}`);
+      //console.log(`Fetching GeoJSON for well ID: ${wellId}`);
       
       // Full URL with explicit protocol and port
       const apiUrl = `http://localhost:9000/api/gwa/get-well-geojson/?id=${wellId}`;
-      console.log(`Making request to: ${apiUrl}`);
+      //console.log(`Making request to: ${apiUrl}`);
       
       const response = await fetch(apiUrl, {
         method: 'GET',
@@ -91,7 +91,7 @@ const DataSelection: React.FC<DataSelectionProps> = ({
         // credentials: 'include',
       });
       
-      console.log('Response status:', response.status);
+      //console.log('Response status:', response.status);
       
       if (!response.ok) {
         // Try to get detailed error if available
@@ -109,7 +109,7 @@ const DataSelection: React.FC<DataSelectionProps> = ({
       }
       
       const data = await response.json();
-      console.log('GeoJSON fetched successfully:', data);
+      //console.log('GeoJSON fetched successfully:', data);
       
       // Update local state
       setGeoJsonData(data);
