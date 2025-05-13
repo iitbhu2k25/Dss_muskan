@@ -1,5 +1,5 @@
 'use client'
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useConditioningFactors } from '../../../../../contexts/Suitability/conditioningContext';
 import { ConditioningFactor } from '../../../../../contexts/Suitability/conditioningContext';
 
@@ -10,7 +10,10 @@ interface ConditioningFactorsProps {
 const ConditioningFactors: React.FC<ConditioningFactorsProps> = ({ onFactorsChange }) => {
   const { factors, loading, updateFactors } = useConditioningFactors();
 
-  // Group factors by category
+  useEffect(() => {
+    console.log('Current factors in component:', factors);
+  }, [factors]);
+
   const factorsByCategory = factors.reduce((acc, factor) => {
     if (!acc[factor.category]) {
       acc[factor.category] = [];
@@ -20,6 +23,7 @@ const ConditioningFactors: React.FC<ConditioningFactorsProps> = ({ onFactorsChan
   }, {} as { [key: string]: ConditioningFactor[] });
 
   const handleFactorToggle = (id: string) => {
+    console.log('Toggling factor with ID:', id);
     const updatedFactors = factors.map(factor => 
       factor.id === id ? { ...factor, selected: !factor.selected } : factor
     );
@@ -28,6 +32,7 @@ const ConditioningFactors: React.FC<ConditioningFactorsProps> = ({ onFactorsChan
   };
 
   const handleSelectAllCategory = (category: string, select: boolean) => {
+    console.log(`${select ? 'Selecting' : 'Deselecting'} all factors in category:`, category);
     const updatedFactors = factors.map(factor => 
       factor.category === category ? { ...factor, selected: select } : factor
     );
@@ -35,58 +40,69 @@ const ConditioningFactors: React.FC<ConditioningFactorsProps> = ({ onFactorsChan
     onFactorsChange?.(updatedFactors.filter(f => f.selected));
   };
 
+  console.log('ConditioningFactors component rendering with factors count:', factors.length);
+
   return (
     <div className="bg-white rounded-md shadow-md p-6">
       <h2 className="text-lg font-semibold text-gray-700 mb-2">Conditioning Factors</h2>
-      <p className="text-sm text-gray-600 mb-4">
-        Select factors that influence site suitability (not strict limitations)
-      </p>
       
       {loading ? (
         <div className="py-4 text-center text-gray-500">Loading conditioning factors...</div>
       ) : factors.length === 0 ? (
         <div className="py-4 text-center text-gray-500">No conditioning factors available. Add API implementation to fetch data.</div>
       ) : (
-        Object.entries(factorsByCategory).map(([category, categoryFactors]) => (
-          <div key={category} className="mb-6">
-            <div className="flex justify-between items-center mb-3">
-              <h3 className="text-base font-medium text-gray-700">{category}</h3>
-              <div className="flex gap-2">
-                <button 
-                  className="text-xs px-2 py-1 bg-gray-200 hover:bg-gray-300 rounded text-gray-700 transition-colors"
-                  onClick={() => handleSelectAllCategory(category, true)}
-                >
-                  Select All
-                </button>
-                <button 
-                  className="text-xs px-2 py-1 bg-gray-200 hover:bg-gray-300 rounded text-gray-700 transition-colors"
-                  onClick={() => handleSelectAllCategory(category, false)}
-                >
-                  Deselect All
-                </button>
+        <>
+          {Object.entries(factorsByCategory).map(([category, categoryFactors]) => (
+            <div key={category} className="mb-8">
+              <div className="flex justify-between items-center mb-4 pb-2 border-b border-gray-200">
+                <h3 className="text-base font-medium text-gray-700">{category}</h3>
+                <div className="flex gap-2">
+                  <button 
+                    className="text-xs px-3 py-1 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-full transition-colors"
+                    onClick={() => handleSelectAllCategory(category, true)}
+                  >
+                    Select All
+                  </button>
+                  <button 
+                    className="text-xs px-3 py-1 bg-gray-50 hover:bg-gray-100 text-gray-600 rounded-full transition-colors"
+                    onClick={() => handleSelectAllCategory(category, false)}
+                  >
+                    Deselect All
+                  </button>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
+                {categoryFactors.map(factor => (
+                  <div 
+                    key={factor.id} 
+                    className={`rounded-lg border p-3 transition-all ${
+                      factor.selected 
+                        ? 'border-blue-300 bg-blue-50' 
+                        : 'border-gray-200 hover:border-gray-300 hover:shadow'
+                    }`}
+                  >
+                    <label className="flex items-start cursor-pointer w-full">
+                      <input
+                        type="checkbox"
+                        checked={factor.selected}
+                        onChange={() => handleFactorToggle(factor.id)}
+                        className="mt-1 mr-3 h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                      />
+                      <div className="flex-grow">
+                        <div className="mt-1 flex items-center">
+                          <span className="text-sm text-black-600 font-medium truncate">
+                            {factor.fileName}
+                          </span>
+                        </div>
+                      </div>
+                    </label>
+                  </div>
+                ))}
               </div>
             </div>
-            
-            <div className="space-y-2">
-              {categoryFactors.map(factor => (
-                <div key={factor.id} className="flex items-start">
-                  <label className="flex items-start cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={factor.selected}
-                      onChange={() => handleFactorToggle(factor.id)}
-                      className="mt-1 mr-3"
-                    />
-                    <div>
-                      <span className="block text-sm font-medium">{factor.name}</span>
-                      <span className="block text-xs text-gray-500">{factor.description}</span>
-                    </div>
-                  </label>
-                </div>
-              ))}
-            </div>
-          </div>
-        ))
+          ))}
+        </>
       )}
     </div>
   );

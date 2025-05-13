@@ -3,11 +3,10 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 
 export interface ConditioningFactor {
   id: string;
-  name: string;
-  description: string;
   selected: boolean;
   weight: number;
   category: string;
+  fileName: string; 
 }
 
 interface ConditioningFactorsContextType {
@@ -26,24 +25,25 @@ export const ConditioningFactorsProvider: React.FC<{ children: React.ReactNode }
     const fetchFactors = async () => {
       setLoading(true);
       try {
-        // Uncomment and update with your actual API endpoint
-        const response = await fetch('http://localhost:7000/api/stp/get_conditioning_factors');
+        console.log('Fetching conditioning factors...');
+        const response = await fetch('http://localhost:7000/api/stp_sutability/get_sutability_by_category?category=condition&all_data=true');
         const data = await response.json();
         
-        // Transform the data to match your ConditioningFactor interface if needed
+        console.log('API Response Data:', data);
+        
         const formattedData: ConditioningFactor[] = data.map((item: any) => ({
           id: item.id.toString(),
-          name: item.name,
-          description: item.description || '',
-          selected: false, // Default to not selected
-          weight: item.weight || 1, // Default weight
-          category: item.category || 'General'
+          selected: false,
+          weight: item.weight || 1,
+          category: item.category || 'General',
+          fileName: item.fileName || item.file_name || `${item.name}.pdf`
         }));
+        
+        console.log('Formatted Conditioning Factors:', formattedData);
         
         setFactors(formattedData);
       } catch (error) {
         console.error('Error fetching conditioning factors:', error);
-        // Set to empty array in case of error
         setFactors([]);
       } finally {
         setLoading(false);
@@ -53,10 +53,17 @@ export const ConditioningFactorsProvider: React.FC<{ children: React.ReactNode }
     fetchFactors();
   }, []);
 
-   
-
   const updateFactors = (newFactors: ConditioningFactor[]) => {
+    console.log('Updating factors:', newFactors);
     setFactors(newFactors);
+    
+    // Log selected factors with ID and weight
+    const selectedFactors = newFactors.filter(factor => factor.selected);
+    if (selectedFactors.length > 0) {
+      console.log('Currently selected factors with IDs and weights:', 
+        selectedFactors.map(f => ({ id: f.id, fileName: f.fileName, weight: f.weight }))
+      );
+    }
   };
 
   return (

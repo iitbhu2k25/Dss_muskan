@@ -13,7 +13,7 @@ export default function Footer() {
           <div className="flex justify-center items-center flex-wrap gap-5 mb-6">
             <div className="relative w-32 h-12">
               <Image
-                src="/images/footer/logo1.png"
+                src="/Images/footer/logo1.png"
                 alt="Partner Logo"
                 fill
                 sizes="100%"
@@ -24,7 +24,7 @@ export default function Footer() {
 
             <div className="relative w-32 h-16">
               <Image
-                src="/images/footer/logo2.svg"
+                src="/Images/footer/logo2.svg"
                 alt="Trusted Brand"
                 fill
                 sizes="100%"
@@ -34,7 +34,7 @@ export default function Footer() {
             
             <div className="relative w-32 h-16">
               <Image
-                src="/images/footer/logo3.gif"
+                src="/Images/footer/logo3.gif"
                 alt="Company Seal"
                 fill
                 sizes="100%"
@@ -45,7 +45,7 @@ export default function Footer() {
 
             <div className="relative w-32 h-16">
               <Image
-                src="/images/footer/iitbhu.png"
+                src="/Images/footer/iitbhu.png"
                 alt="Certified Mark"
                 fill
                 sizes="100%"
@@ -55,7 +55,7 @@ export default function Footer() {
 
             <div className="relative w-32 h-16">
               <Image
-                src="/images/footer/iitbombay.png"
+                src="/Images/footer/iitbombay.png"
                 alt="Award Logo"
                 fill
                 sizes="100%"
@@ -65,26 +65,7 @@ export default function Footer() {
 
             <div className="relative w-32 h-16">
               <Image
-                src="/images/footer/download.png"
-                alt="Company Seal"
-                fill
-                sizes="100%"
-                style={{ objectFit: "contain" }}
-              />
-            </div>
-            <div className="relative w-32 h-16">
-              <Image
-                src="/images/footer/iit_delhi_logo.png"
-                alt="Company Seal"
-                fill
-                sizes="100%"
-                style={{ objectFit: "contain" }}
-              />
-            </div>
-            
-            <div className="relative w-32 h-16">
-              <Image
-                src="/images/footer/IIT_Madras_Logo.svg.png"
+                src="/Images/footer/download.png"
                 alt="Company Seal"
                 fill
                 sizes="100%"
@@ -94,7 +75,17 @@ export default function Footer() {
 
             <div className="relative w-32 h-16">
               <Image
-                src="/images/footer/50.png"
+                src="/Images/footer/IIT_Madras_Logo.svg.png"
+                alt="Company Seal"
+                fill
+                sizes="100%"
+                style={{ objectFit: "contain" }}
+              />
+            </div>
+
+            <div className="relative w-32 h-16">
+              <Image
+                src="/Images/footer/50.png"
                 alt="Company Seal"
                 fill
                 sizes="100%"
@@ -105,8 +96,8 @@ export default function Footer() {
         </div>
       </div>
       
-      {/* Information section
-      <div className="bg-[#00008B] text-white p-5 text-sm">
+      {/* Information section */}
+      <div className="bg-[blue] text-white font-bold p-5 text-sm">
         <div className="max-w-[1140px] mx-auto flex flex-wrap justify-between">
           <div className="flex-1 min-w-[200px] mr-5 mb-5">
             <h4 className="text-base mt-0 mb-4 pb-1.5 border-b border-white/20">
@@ -192,10 +183,10 @@ export default function Footer() {
             </ul>
           </div>
         </div>
-      </div> */}
+      </div> 
       
-      {/* Copyright bar */}
-      <div className="bg-[#000066] text-white/70 text-center py-2.5 text-sm">
+     {/* Copyright bar */}
+      <div className="bg-[lightblue] text-black/100 font-bold text-center py-2.5 text-sm">
         © {new Date().getFullYear()} Decision Support System for Water Governance. All Rights Reserved.
       </div>
     </footer>

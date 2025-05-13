@@ -3,10 +3,9 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 
 export interface ConstraintFactor {
   id: string;
-  name: string;
-  description: string;
   selected: boolean;
   category: string;
+  fileName: string;
 }
 
 interface ConstraintFactorsContextType {
@@ -25,27 +24,26 @@ export const ConstraintFactorsProvider: React.FC<{ children: React.ReactNode }> 
     const fetchFactors = async () => {
       setLoading(true);
       try {
-        // Fetch constraint factors from API
-        const response = await fetch('http://localhost:7000/api/stp/get_constraint_factors');
+        console.log('Fetching constraint factors...');
+        const response = await fetch('http://localhost:7000/api/stp_sutability/get_sutability_by_category?category=constraint&all_data=true');
         if (!response.ok) {
           throw new Error(`HTTP error! Status: ${response.status}`);
         }
         
         const data = await response.json();
+        console.log('API Response Data:', data);
         
-        // Transform the data to match your ConstraintFactor interface if needed
         const formattedData: ConstraintFactor[] = data.map((item: any) => ({
           id: item.id.toString(),
-          name: item.name,
-          description: item.description || '',
-          selected: false, // Default to not selected
-          category: item.category || 'General'
+          selected: false,
+          category: item.category || 'General',
+          fileName: item.fileName || item.file_name || `${item.name}.pdf`
         }));
         
+        console.log('Formatted Constraint Factors:', formattedData);
         setFactors(formattedData);
       } catch (error) {
         console.error('Error fetching constraint factors:', error);
-        // Set to empty array in case of error
         setFactors([]);
       } finally {
         setLoading(false);
@@ -56,7 +54,16 @@ export const ConstraintFactorsProvider: React.FC<{ children: React.ReactNode }> 
   }, []);
 
   const updateFactors = (newFactors: ConstraintFactor[]) => {
+    console.log('Updating constraint factors:', newFactors);
     setFactors(newFactors);
+    
+    // Log selected factors with IDs
+    const selectedFactors = newFactors.filter(factor => factor.selected);
+    if (selectedFactors.length > 0) {
+      console.log('Currently selected constraint factors with IDs:', 
+        selectedFactors.map(f => ({ id: f.id, fileName: f.fileName }))
+      );
+    }
   };
 
   return (
