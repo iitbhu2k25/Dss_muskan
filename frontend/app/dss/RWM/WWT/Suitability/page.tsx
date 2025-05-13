@@ -183,28 +183,10 @@ const SiteSuitabilityApp: React.FC = () => {
 
                 <div className="w-full md:w-1/2 flex flex-col">
                   {/* Map with responsive height */}
-                  <div className="bg-white rounded-md shadow-md p-2 h-[600px] md:h-[600px] lg:h-[650px] xl:h-[700px]">
+                  <div className="bg-white rounded-md shadow-md p-2 h-[600px] md:h-[600px] lg:h-[650px] xl:h-[800px]">
                     <MapComponent selectedLocations={{ state: '', districts: [], subDistricts: [] }} />
                   </div>
                   
-                  {/* Display a summary of selected factors if any */}
-                  {(selectedConditioningFactors.length > 0 || selectedConstraintFactors.length > 0) && (
-                    <div className="bg-white rounded-md shadow-md p-4 mt-4">
-                      <h3 className="text-lg font-semibold mb-2">Selection Summary</h3>
-                      
-                      <div className="text-sm">
-                        <p><span className="font-medium">Conditioning Factors:</span> {selectedConditioningFactors.length} selected</p>
-                        <p><span className="font-medium">Constraint Factors:</span> {selectedConstraintFactors.length} selected</p>
-                      </div>
-                      
-                      {selectedConditioningFactors.length > 0 && (
-                        <div className="mt-2 text-xs text-gray-600">
-                          <p className="font-medium">Adjusting weights:</p>
-                          <p>Use the sliders to set the importance of each conditioning factor in the analysis.</p>
-                        </div>
-                      )}
-                    </div>
-                  )}
                   
                   {/* Conditioning Factor Slider */}
                   {selectedConditioningFactors.length > 0 && (
