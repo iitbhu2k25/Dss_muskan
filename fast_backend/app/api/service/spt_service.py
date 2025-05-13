@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from app.database.crud.stp_crud import Stp_State_crud,Stp_District_crud,Stp_SubDistrict_crud,STP_raster_crud
+from app.database.crud.stp_crud import Stp_State_crud,Stp_District_crud,Stp_SubDistrict_crud,STP_raster_crud,STP_sutability_crud
 from app.conf.settings import Settings
 import os
 
@@ -36,5 +36,10 @@ class Stp_service:
             raster_path.append(temp_path)
             raster_weights.append(float(i.weight))
         return raster_path,raster_weights
+    
+    def get_raster_sutability(db:Session,category:str,all_data:bool=False):
+        return STP_sutability_crud(db).get_sutability_category(category,all_data)
+        
+       
 
         

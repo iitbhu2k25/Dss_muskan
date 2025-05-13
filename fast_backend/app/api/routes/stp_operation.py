@@ -16,17 +16,9 @@ def stp_raster(db:db_dependency,payload: STPCategory):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="No data found"
         )
-        print("weight",payload.data)
         raster_path,raster_weights=Stp_service.get_raster(db,payload)
-        ans=STPPriorityMapper().create_priority_map(raster_path,raster_weights)
-        result=RasterProcess().processRaster(ans)
-        if result:
-            return ans
-        else:
-            raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=str(e)
-        )
+        ans=STPPriorityMapper().create_priority_map(raster_path,raster_weights,payload.clip)
+        return ans
             
     except Exception as e:
         raise HTTPException(

@@ -16,6 +16,7 @@ class GeoConfig:
         self.output_path = self.base_dir / "temp"
         self.constraint_raster_path = self.input_path /"media" / "Rajat_data" /"shape_stp" / "STP_pripority_raster" / "STP.tif"
         self.basin_shapefile = self.input_path /"media" / "Rajat_data"/ "shape_stp" / "STP_pripority_raster" / "Basin_Outline.shp"
+        self.villages_shapefile = self.input_path /"media" / "Rajat_data"/ "shape_stp" / "villages" / "STP_Village.shp"
         os.makedirs(self.output_path, exist_ok=True)
 
         self.target_crs = "EPSG:32644"

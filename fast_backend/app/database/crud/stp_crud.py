@@ -1,4 +1,4 @@
-from app.database.models import State,District,SubDistrict,STP_raster
+from app.database.models import State,District,SubDistrict,STP_raster,STP_sutability_raster
 from app.database.crud.base import CrudBase
 from sqlalchemy.orm import Session
 import sqlalchemy as sq
@@ -34,15 +34,7 @@ class Stp_SubDistrict_crud(CrudBase):
             self.Model.district_code.in_(district)).order_by(sq.asc(self.Model.subdistrict_name))
         return self._pagination(query,all_data)
 
-# class Stp_Village_crud(CrudBase):
-#     def __init__(self,db:Session,Model=Village):
-#         super().__init__(db,Model)
-#         self.obj = None
 
-#     def get_by_list(self,sub_district:list,all_data:bool=False):
-#         query=self.db.query(self.Model).filter(
-#             self.Model.subdistrict_name.in_(sub_district)).order_by(self.Model.village_name)
-#         return self._pagination(query,all_data)
     
 class STP_raster_crud(CrudBase):
     def __init__(self,db:Session,Model=STP_raster):
@@ -54,3 +46,14 @@ class STP_raster_crud(CrudBase):
         return (
             query.first().file_path
         )
+
+class STP_sutability_crud(CrudBase):
+    def __init__(self,db:Session,Model=STP_sutability_raster):
+        super().__init__(db,Model)
+        self.obj = None
+    def get_sutability_category(self,category:str,all_data:bool=False):
+        query=self.db.query(self.Model).filter(
+            self.Model.raster_category==category)
+        return self._pagination(query,all_data)
+
+        

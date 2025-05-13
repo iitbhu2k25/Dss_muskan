@@ -38,3 +38,11 @@ class STP_raster(Base):
     file_path:Mapped[str]=mapped_column(String,nullable=False)
 
 
+
+class STP_sutability_raster(Base):
+    __tablename__='stp_sutability_raster'
+    file_name:Mapped[str]=mapped_column(String,nullable=False)
+    layer_name:Mapped[str]=mapped_column(String,nullable=False)
+    weight:Mapped[float]=mapped_column(Float,nullable=False)
+    file_path:Mapped[str]=mapped_column(String,nullable=False)
+    raster_category:Mapped[str]=mapped_column(String,nullable=False)

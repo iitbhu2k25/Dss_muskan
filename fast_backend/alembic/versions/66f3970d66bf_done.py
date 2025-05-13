@@ -1,8 +1,8 @@
-"""stp
+"""done
 
-Revision ID: b2693290cc8a
+Revision ID: 66f3970d66bf
 Revises: 
-Create Date: 2025-05-04 12:39:03.122072
+Create Date: 2025-05-12 15:04:53.822353
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'b2693290cc8a'
+revision: str = '66f3970d66bf'
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -42,6 +42,18 @@ def upgrade() -> None:
     sa.UniqueConstraint('state_code')
     )
     op.create_index(op.f('ix_stp_state_id'), 'stp_state', ['id'], unique=True)
+    op.create_table('stp_sutability_raster',
+    sa.Column('file_name', sa.String(), nullable=False),
+    sa.Column('layer_name', sa.String(), nullable=False),
+    sa.Column('weight', sa.Float(), nullable=False),
+    sa.Column('file_path', sa.String(), nullable=False),
+    sa.Column('raster_category', sa.String(), nullable=False),
+    sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
+    sa.Column('created_at', sa.DateTime(), nullable=False),
+    sa.Column('modified_at', sa.DateTime(), nullable=False),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_index(op.f('ix_stp_sutability_raster_id'), 'stp_sutability_raster', ['id'], unique=True)
     op.create_table('stp_district',
     sa.Column('district_code', sa.Integer(), nullable=False),
     sa.Column('district_name', sa.String(), nullable=False),
@@ -76,6 +88,8 @@ def downgrade() -> None:
     op.drop_table('stp_subdistrict')
     op.drop_index(op.f('ix_stp_district_id'), table_name='stp_district')
     op.drop_table('stp_district')
+    op.drop_index(op.f('ix_stp_sutability_raster_id'), table_name='stp_sutability_raster')
+    op.drop_table('stp_sutability_raster')
     op.drop_index(op.f('ix_stp_state_id'), table_name='stp_state')
     op.drop_table('stp_state')
     op.drop_index(op.f('ix_stp_raster_id'), table_name='stp_raster')

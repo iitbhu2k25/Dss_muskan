@@ -15,7 +15,11 @@ from app.api.service.network.network_conf import GeoConfig
 import uuid
 from pathlib import Path
 from app.api.schema.stp_schema import STPClassification
-import uuid
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+subdistrict_path = os.path.join(BASE_DIR, 'media', 'Rajat_data', 'shape_stp', 'subdistrict', 'STP_subdistrict.shp')
+villages_path = os.path.join(BASE_DIR, 'media', 'Rajat_data', 'shape_stp', 'villages', 'STP_Village.shp')
+
 
 geo=Geoserver()
 class STPProcessor:
@@ -191,6 +195,34 @@ class STPProcessor:
         
    
         return output_path
+    
+    def clip_to_user(self, raster_path: str,clip:List[int]=None) -> str:
+        
+        try:
+            subdistrict_path = os.path.join(self.config.base_dir, 'media', 'Rajat_data', 'shape_stp', 'subdistrict', 'STP_subdistrict.shp')
+            villages_path = os.path.join(self.config.base_dir, 'media', 'Rajat_data', 'shape_stp', 'villages', 'STP_Village.shp')
+            sub_dis_vector = gpd.read_file(subdistrict_path)
+            if sub_dis_vector.crs is None:
+                sub_dis_vector.set_crs("EPSG:32644", inplace=True) 
+            sub_dis_vector=sub_dis_vector.to_crs("EPSG:32644")
+            sub_dis_vector=sub_dis_vector[sub_dis_vector['subdis_cod'].isin(clip)]
+            with rasterio.open(raster_path) as src:
+                out_image, out_transform = mask(dataset=src, shapes=sub_dis_vector.geometry, crop=True)
+                out_meta = src.meta.copy()
+            out_meta.update({
+                "driver": "GTiff",
+                "height": out_image.shape[1],
+                "width": out_image.shape[2],
+                "transform": out_transform
+            })
+            output_name=raster_path.split("/")[-1]
+            os.remove(raster_path)
+            output_path = os.path.join(self.config.output_path, output_name)
+            with rasterio.open(output_path, "w", **out_meta) as dest:
+                dest.write(out_image)
+            return output_path
+        except Exception as e:
+            print(e)
 
 class RasterProcess:
     def __init__(self, config: GeoConfig = GeoConfig()):
@@ -393,19 +425,16 @@ class RasterProcess:
         print(f"SLD file created: {output_sld_path}")
         return output_sld_path
     
-    def processRaster(self,payload:STPClassification):
+    def processRaster(self,file_path:str):
         try:
-            file_path=geo.raster_download(workspace_name=payload.get('workspace'), store_name=payload.get('store_name'), layer_name = payload.get('layer_name'))
             #sld_path=self._generate_dynamic_sld(raster_path=file_path,num_classes=5,color_ramp='viridis')
             sld_path=self._generate_dynamic_sld(raster_path=file_path,num_classes=5,color_ramp='blue_to_red')
             #sld_path=self._generate_dynamic_sld(raster_path=file_path,num_classes=5,color_ramp='spectral')
             #sld_path=self._generate_dynamic_sld(raster_path=file_path,num_classes=5,color_ramp='terrain') #terrain
             #sld_path=self._generate_dynamic_sld(raster_path=file_path,num_classes=5,color_ramp="greenTOred")
             sld_name = os.path.basename(sld_path).split('.')[0]
-            geo.apply_sld_to_layer(workspace_name=payload.get('workspace'), layer_name = payload.get('layer_name'),sld_content=sld_path, sld_name=sld_name)
-            os.remove(sld_path)
-            os.remove(file_path)
-            return True
+            # delete thge geoserver raster and clip here 
+            return sld_path,sld_name
         except Exception as e:
             print("exceprion",e)
             return False
@@ -415,7 +444,7 @@ class STPPriorityMapper:
         self.config = config or GeoConfig()
         self.processor = STPProcessor(self.config)
     
-    def create_priority_map(self, raster_paths: List[str], weights: List[float]) -> str:
+    def create_priority_map(self, raster_paths: List[str], weights: List[float],clip:List[int]=None) -> str:
         try:
 
             if len(raster_paths) != len(weights):
@@ -434,11 +463,17 @@ class STPPriorityMapper:
                 raster_path=constrained_path,
                 shapefile_path=self.config.basin_shapefile , output_name=final_name
             )
+            sld_path,sld_name=RasterProcess().processRaster(final_path)
+            
+            final_path=self.processor.clip_to_user(final_path,clip=clip)
+
             status,layer_name=geo.publish_raster(workspace_name=self.config.raster_workspace, store_name=self.config.raster_store, raster_path=final_path)
+            status=geo.apply_sld_to_layer(workspace_name=self.config.raster_workspace, layer_name = layer_name,sld_content=sld_path, sld_name=sld_name)
             if status:
                 os.remove(final_path)
                 os.remove(weighted_path)
                 os.remove(constrained_path)
+                os.remove(sld_path)
                 return {
                     "status": "success",
                     "workspace": self.config.raster_workspace,
