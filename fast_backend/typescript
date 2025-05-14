@@ -1,0 +1,22 @@
+Script started on 2025-05-14 08:20:40+00:00 [TERM="xterm" TTY="/dev/pts/1" COLUMNS="224" LINES="41"]
+$ geoserver_vector.py
+sh: 1: geoserver_vector.py: not found
+$ cd scrip[tg   t
+$ python geoserver  _vector.py
+workspace is created successfully
+WFS service enabled for workspace 'vector_work'
+WMS service enabled for workspace 'vector_work'
+Shapefile store 'stp_vector_store' created successfully in workspace 'vector_work'
+Shapefile uploaded and published as layer 'STP_state_layers'
+Shapefile ution] Context impl PostgresqlImpl.
+INFO  [alembic.runtime.migration] Will assume transactional DDL.
+$ cd script         script
+Script started, output log file is 'typescript'.
+$ geoserver_vector.py
+sh: 1: geoserver_vector.py: not found
+$ cd scrip[tg   t
+$ python geoserver  _vector.py
+workspace is created successfully
+WFS service enabled for workspace 'vector_work'
+WMS service enabled for workspace 'vector_work'
+Shapefile store 'stp_vector_store' created successfully in w

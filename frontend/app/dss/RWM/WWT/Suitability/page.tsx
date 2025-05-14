@@ -6,6 +6,7 @@ import ConditioningFactors from './components/conditioningFactors';
 import ConstraintFactors from './components/constraintFactors';
 import ConditioningFactorSlider from './components/conditioningFactorSlider';
 import { LocationProvider, useLocation } from '../../../../contexts/Suitability/locationContext';
+import { MapProvider } from '../../../../contexts/Suitability/Mapcontext';
 import { ConditioningFactorsProvider, useConditioningFactors } from '../../../../contexts/Suitability/conditioningContext';
 import { ConstraintFactorsProvider, useConstraintFactors } from '../../../../contexts/Suitability/constraintContext';
 import { ConditioningFactor } from '../../../../contexts/Suitability/conditioningContext';
@@ -156,47 +157,47 @@ const SiteSuitabilityApp: React.FC = () => {
           <ConditioningFactorsProvider>
             <ConstraintFactorsProvider>
               <div className="flex flex-col md:flex-row gap-4">
-                <div className="w-full md:w-1/2 space-y-4">
-                  <LocationProvider
-                    onLocationsChange={(locations) => {
-                      console.log('Locations changed:', locations);
-                    }}
-                  >
-                    <LocationSelection />
-                  </LocationProvider>
+                <LocationProvider
+                  onLocationsChange={(locations) => {
+                    console.log('Locations changed:', locations);
+                  }}
+                >
+                  <MapProvider>
+                    <div className="w-full md:w-1/2 space-y-4">
+                      <LocationSelection />
 
-                  <ConditioningFactors 
-                    onFactorsChange={(factors) => setSelectedConditioningFactors(factors)} 
-                  />
+                      <ConditioningFactors 
+                        onFactorsChange={(factors) => setSelectedConditioningFactors(factors)} 
+                      />
 
-                  <ConstraintFactors 
-                    onFactorsChange={(factors) => setSelectedConstraintFactors(factors)} 
-                  />
+                      <ConstraintFactors 
+                        onFactorsChange={(factors) => setSelectedConstraintFactors(factors)} 
+                      />
 
-                  {/* Submit button now wrapped in context-aware component */}
-                  <AnalysisSubmitWrapper 
-                    mode={mode}
-                    selectedConditioningFactors={selectedConditioningFactors}
-                    selectedConstraintFactors={selectedConstraintFactors}
-                  />
-                </div>
-
-                <div className="w-full md:w-1/2 flex flex-col">
-                  {/* Map with responsive height */}
-                  <div className="bg-white rounded-md shadow-md p-2 h-[600px] md:h-[600px] lg:h-[650px] xl:h-[800px]">
-                    <MapComponent selectedLocations={{ state: '', districts: [], subDistricts: [] }} />
-                  </div>
-                  
-                  
-                  {/* Conditioning Factor Slider */}
-                  {selectedConditioningFactors.length > 0 && (
-                    <div className="bg-white rounded-md shadow-md p-4 mt-4 mb-8">
-                      <ConditioningFactorSlider 
-                        selectedFactors={selectedConditioningFactors} 
+                      {/* Submit button now wrapped in context-aware component */}
+                      <AnalysisSubmitWrapper 
+                        mode={mode}
+                        selectedConditioningFactors={selectedConditioningFactors}
+                        selectedConstraintFactors={selectedConstraintFactors}
                       />
                     </div>
-                  )}
-                </div>
+
+                    <div className="w-full md:w-1/2 flex flex-col">
+                      {/* Map with responsive height */}
+                      <div className="bg-white rounded-md shadow-md p-2 h-[600px] md:h-[600px] lg:h-[650px] xl:h-[800px]">
+                        <MapComponent />
+                      </div>
+                      {/* Conditioning Factor Slider */}
+                      {selectedConditioningFactors.length > 0 && (
+                        <div className="bg-white rounded-md shadow-md p-4 mt-4 mb-8">
+                          <ConditioningFactorSlider 
+                            selectedFactors={selectedConditioningFactors} 
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </MapProvider>
+                </LocationProvider>
               </div>
             </ConstraintFactorsProvider>
           </ConditioningFactorsProvider>

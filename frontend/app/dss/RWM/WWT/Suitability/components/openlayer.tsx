@@ -9,23 +9,18 @@ import XYZ from 'ol/source/XYZ';
 import { fromLonLat } from 'ol/proj';
 import VectorLayer from 'ol/layer/Vector';
 import VectorSource from 'ol/source/Vector';
+import { useMap } from '../../../../../contexts/Suitability/Mapcontext';
 
-interface MapProps {
-  selectedLocations?: {
-    state: string;
-    districts: string[];
-    subDistricts: string[];
-  };
-}
-
-const MapComponent: React.FC<MapProps> = ({ selectedLocations }) => {
+const MapComponent: React.FC = () => {
   const mapRef = useRef<HTMLDivElement>(null);
   const [map, setMap] = useState<Map | null>(null);
-  const [baseMapType, setBaseMapType] = useState<'osm' | 'satellite' | 'terrain'>('osm');
   const [coordinates, setCoordinates] = useState<{ lat: number; lon: number }>({ 
     lat: 22.5, 
     lon: 80.0 
   });
+
+  // Get data from map context
+  const { selectedLocations, baseMapType, setBaseMapType } = useMap();
 
   // Initialize map
   useEffect(() => {
@@ -112,8 +107,8 @@ const MapComponent: React.FC<MapProps> = ({ selectedLocations }) => {
 
   // Update vector layer when selected locations change
   useEffect(() => {
-    if (!map || !selectedLocations) return;
-    // In a real app, this would update the vector layer with new GeoJSON
+    if (!map) return;
+    // Log the selected locations whenever they change
     console.log('Selected locations updated:', selectedLocations);
   }, [selectedLocations, map]);
 
