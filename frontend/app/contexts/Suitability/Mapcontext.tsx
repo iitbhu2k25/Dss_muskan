@@ -11,6 +11,10 @@ const LAYER_NAMES = {
 
 // Type definitions for the context
 interface MapContextType {
+  primaryLayer: string;
+  secondaryLayer: string | null;
+  layerFilter: string | null;
+  layerFilterValue: number[] | null;
   selectedLocations: {
     state: string;
     districts: string[];
@@ -18,6 +22,12 @@ interface MapContextType {
   };
   baseMapType: 'osm' | 'satellite' | 'terrain';
   setBaseMapType: (type: 'osm' | 'satellite' | 'terrain') => void;
+  setPrimaryLayer: (layer: string) => void;
+  setSecondaryLayer: (layer: string | null) => void;
+  syncLayersWithLocation: () => void;
+  isMapLoading: boolean;
+  zoomToFeature: (featureId: number | string, layerName: string) => void;
+  resetMapView: () => void;
   LAYER_NAMES: typeof LAYER_NAMES;
 }
 
@@ -28,6 +38,10 @@ interface MapProviderProps {
 
 // Create the map context with default values
 const MapContext = createContext<MapContextType>({
+  primaryLayer: LAYER_NAMES.STATE,
+  secondaryLayer: null,
+  layerFilter: null,
+  layerFilterValue: null,
   selectedLocations: {
     state: '',
     districts: [],
@@ -35,11 +49,24 @@ const MapContext = createContext<MapContextType>({
   },
   baseMapType: 'osm',
   setBaseMapType: () => {},
+  setPrimaryLayer: () => {},
+  setSecondaryLayer: () => {},
+  syncLayersWithLocation: () => {},
+  isMapLoading: false,
+  zoomToFeature: () => {},
+  resetMapView: () => {},
   LAYER_NAMES
 });
 
 // Create the provider component
 export const MapProvider: React.FC<MapProviderProps> = ({ children }) => {
+  // State for layer management
+  const [primaryLayer, setPrimaryLayer] = useState<string>(LAYER_NAMES.STATE);
+  const [secondaryLayer, setSecondaryLayer] = useState<string | null>(null);
+  const [layerFilter, setLayerFilter] = useState<string|null>(null);
+  const [layerFilterValue, setLayerFilterValue] = useState<number[]|null>(null);
+  const [isMapLoading, setIsMapLoading] = useState<boolean>(false);
+  
   // State for map data - matching the existing MapComponent props
   const [selectedLocations, setSelectedLocations] = useState<{
     state: string;
@@ -65,12 +92,60 @@ export const MapProvider: React.FC<MapProviderProps> = ({ children }) => {
     selectionsLocked
   } = useLocation();
 
+  // Function to reset map view (zoom to default)
+  const resetMapView = (): void => {
+    console.log("Map view reset requested");
+  };
+
+  // Function to zoom to a specific feature
+  const zoomToFeature = (featureId: number | string, layerName: string): void => {
+    console.log(`Zoom to feature ${featureId} in layer ${layerName} requested`);
+  };
+
+  // Synchronize layers based on location selections
+  const syncLayersWithLocation = (): void => {
+    setIsMapLoading(true);
+    
+    // Default to showing states
+    let primary: string = LAYER_NAMES.STATE;
+    let secondary: string | null = null;
+    let filter: string | null = null;
+    let filterValue: number[] | null = null;
+    
+    // Logic for determining which layers to show based on selection state
+    if (selectedSubDistricts.length > 0) {
+      secondary = LAYER_NAMES.SUB_DISTRICT;
+      filter = 'id';
+      filterValue = selectedSubDistricts;
+      console.log("Setting layer to SUB_DISTRICT, filtering by:", selectedSubDistricts);
+    }
+    else if (selectedDistricts.length > 0) {
+      secondary = LAYER_NAMES.DISTRICT;
+      filter = 'id';
+      filterValue = selectedDistricts;
+      console.log("Setting layer to DISTRICT, filtering by:", selectedDistricts);
+    }
+    else if (selectedState) {
+      secondary = LAYER_NAMES.STATE;
+      filter = 'id';
+      filterValue = [selectedState];
+      console.log("Setting layer to STATE, filtering by:", selectedState);
+    }
+
+    // Update state with new layer configuration
+    setPrimaryLayer(primary);
+    setSecondaryLayer(secondary);
+    setLayerFilter(filter);
+    setLayerFilterValue(filterValue);
+    setIsMapLoading(false);
+  };
+
   // Effect for state selection
   useEffect(() => {
     if (selectedState !== null) {
       // Find state name from the ID
       const stateName = states.find(s => s.id === selectedState)?.name || '';
-      console.log("🔵 STATE SELECTED:", selectedState, stateName);
+      console.log("STATE SELECTED:", selectedState, stateName);
       
       // Update the selectedLocations with the state name
       setSelectedLocations(prev => ({
@@ -79,7 +154,7 @@ export const MapProvider: React.FC<MapProviderProps> = ({ children }) => {
       }));
     } else {
       // Reset state selection
-      console.log("🔵 NO STATE SELECTED");
+      console.log("NO STATE SELECTED");
       setSelectedLocations(prev => ({
         ...prev,
         state: ''
@@ -95,7 +170,7 @@ export const MapProvider: React.FC<MapProviderProps> = ({ children }) => {
         districts.find(d => d.id === id)?.name || ''
       ).filter(Boolean);
       
-      console.log("🟢 DISTRICTS SELECTED:", selectedDistricts, districtNames);
+      console.log("DISTRICTS SELECTED:", selectedDistricts, districtNames);
       
       // Update the selectedLocations with the district names
       setSelectedLocations(prev => ({
@@ -104,7 +179,7 @@ export const MapProvider: React.FC<MapProviderProps> = ({ children }) => {
       }));
     } else {
       // Reset district selection
-      console.log("🟢 NO DISTRICTS SELECTED");
+      console.log("NO DISTRICTS SELECTED");
       setSelectedLocations(prev => ({
         ...prev,
         districts: []
@@ -121,9 +196,9 @@ export const MapProvider: React.FC<MapProviderProps> = ({ children }) => {
       ).filter(Boolean);
       
       if (selectionsLocked) {
-        console.log("🟣 SUBDISTRICTS SELECTED AND LOCKED:", selectedSubDistricts, subDistrictNames);
+        console.log("SUBDISTRICTS SELECTED AND LOCKED:", selectedSubDistricts, subDistrictNames);
       } else {
-        console.log("🟣 SUBDISTRICTS SELECTED BUT NOT LOCKED:", selectedSubDistricts, subDistrictNames);
+        console.log("SUBDISTRICTS SELECTED BUT NOT LOCKED:", selectedSubDistricts, subDistrictNames);
       }
       
       // Update the selectedLocations with the subdistrict names
@@ -133,7 +208,7 @@ export const MapProvider: React.FC<MapProviderProps> = ({ children }) => {
       }));
     } else {
       // Reset subdistrict selection
-      console.log("🟣 NO SUBDISTRICTS SELECTED");
+      console.log("NO SUBDISTRICTS SELECTED");
       setSelectedLocations(prev => ({
         ...prev,
         subDistricts: []
@@ -141,11 +216,30 @@ export const MapProvider: React.FC<MapProviderProps> = ({ children }) => {
     }
   }, [selectedSubDistricts, subDistricts, selectionsLocked]);
 
-  // Context value - matches the props expected by your MapComponent
+  // Listen for changes in location selection and update layers accordingly
+  useEffect(() => {
+    syncLayersWithLocation();
+  }, [
+    selectedState,
+    selectedDistricts.length,
+    selectedSubDistricts.length,
+  ]);
+
+  // Context value - combines both approaches
   const contextValue: MapContextType = {
+    primaryLayer,
+    secondaryLayer,
+    layerFilter,
+    layerFilterValue,
     selectedLocations,
     baseMapType,
     setBaseMapType,
+    setPrimaryLayer,
+    setSecondaryLayer,
+    syncLayersWithLocation,
+    isMapLoading,
+    zoomToFeature,
+    resetMapView,
     LAYER_NAMES
   };
 
