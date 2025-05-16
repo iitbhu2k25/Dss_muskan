@@ -28,7 +28,9 @@ interface CategoryContextType {
   clearAllCategories: () => void;
   isSelected: (RasterName: string) => boolean;
   getCategoryInfluence: (RasterName: string) => number;
-  getCategoryWeight: (RasterName: string) => number; // New function to get weight
+  getCategoryWeight: (RasterName: string) => number;
+  stpProcess: boolean
+  setStpProcess: (value: boolean) => void // New function to get weight
 }
 
 interface CategoryProviderProps {
@@ -101,6 +103,7 @@ const AVAILABLE_CATEGORIES: Category[] = [
 // Category provider component
 export const CategoryProvider = ({ children }: CategoryProviderProps) => {
   const [selectedCategoryName, setSelectedCategoryName] = useState<SelectRasterLayer[]>([]);
+  const [stpProcess,setStpProcess] = useState<boolean>(false);
 
   // Calculate weights for all selected categories
   const calculateWeights = (categories: SelectRasterLayer[]): SelectRasterLayer[] => {
@@ -259,7 +262,9 @@ export const CategoryProvider = ({ children }: CategoryProviderProps) => {
     clearAllCategories,
     isSelected,
     getCategoryInfluence,
-    getCategoryWeight
+    getCategoryWeight,
+    stpProcess,
+    setStpProcess
   };
   
   return (

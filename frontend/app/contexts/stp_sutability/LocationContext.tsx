@@ -47,7 +47,6 @@ interface LocationContextType {
 // Props for the LocationProvider component
 interface LocationProviderProps {
   children: ReactNode;
-  onLocationsChange?: (locations: SelectionsData | null) => void;
 }
 
 // Create the location context with default values
@@ -69,7 +68,7 @@ const LocationContext = createContext<LocationContextType>({
 });
 
 // Create the provider component
-export const LocationProvider: React.FC<LocationProviderProps> = ({ children, onLocationsChange }) => {
+export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) => {
   // State for location data
   const [states, setStates] = useState<State[]>([]);
   const [districts, setDistricts] = useState<District[]>([]);
@@ -85,7 +84,7 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children, on
   const [selectionsLocked, setSelectionsLocked] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   
-  // Fetch states from API
+  // Mock data loading - replace with actual API calls
   useEffect(() => {
     const fetchStates = async () => {
       setIsLoading(true);
@@ -168,8 +167,9 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children, on
       return;
     }
     
+    setIsLoading(true);
+    
     const fetchSubDistricts = async () => {
-      setIsLoading(true);
       try {
         const response = await fetch('http://localhost:7000/api/stp/get_sub_districts/', {
           method: 'POST',
@@ -231,7 +231,6 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children, on
   // Handle state selection
   const handleStateChange = (stateId: number): void => {
     setSelectedState(stateId);
-    // Reset dependent selections
     setSelectedDistricts([]);
     setSelectedSubDistricts([]);
     setSelectionsLocked(false);
@@ -247,19 +246,12 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children, on
       selectedSubDistricts.includes(Number(subDistrict.id))
     );
     
-    const selectedData: SelectionsData = {
+    setSelectionsLocked(true);
+    
+    return {
       subDistricts: selectedSubDistrictObjects,
       totalPopulation
     };
-    
-    setSelectionsLocked(true);
-    
-    // Call the onLocationsChange prop if it exists
-    if (onLocationsChange) {
-      onLocationsChange(selectedData);
-    }
-    
-    return selectedData;
   };
   
   // Reset all selections
@@ -269,11 +261,6 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children, on
     setSelectedSubDistricts([]);
     setTotalPopulation(0);
     setSelectionsLocked(false);
-    
-    // Notify parent component about the reset
-    if (onLocationsChange) {
-      onLocationsChange(null);
-    }
   };
   
   // Context value

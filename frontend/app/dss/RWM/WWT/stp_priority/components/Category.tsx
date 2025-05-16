@@ -1,6 +1,6 @@
 'use client'
 import React from 'react';
-import { useCategory } from '@/app/contexts/STP/CategoryContext';
+import { useCategory } from '@/app/contexts/stp_priority/CategoryContext';
 
 const CategorySelector: React.FC = () => {
   const {
@@ -77,7 +77,7 @@ const CategorySelector: React.FC = () => {
                       <i className={`fas fa-${category.icon}`}></i>
                     </span>
                     <span className="text-sm">
-                      {category.name} <span className="text-xs text-gray-500">({category.Influence})</span>
+                      {category.name} <span className="text-xs text-gray-500"></span>
                     </span>
                   </div>
                 </label>
@@ -107,7 +107,7 @@ const CategorySelector: React.FC = () => {
                       <i className={`fas fa-${category.icon}`}></i>
                     </span>
                     <span className="text-sm">
-                      {category.name} <span className="text-xs text-gray-500">({category.Influence})</span>
+                      {category.name} <span className="text-xs text-gray-500"></span>
                     </span>
                   </div>
                 </label>

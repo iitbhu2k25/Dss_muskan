@@ -1,7 +1,7 @@
 'use client'
 import React from 'react';
 import { MultiSelect } from './Multiselect';
-import { useLocation, SubDistrict } from '../../../../../contexts/Suitability/locationContext';
+import { useLocation, SubDistrict } from '@/app/contexts/stp_priority/LocationContext';
 
 interface LocationSelectorProps {
   onConfirm?: (selectedData: {
@@ -11,7 +11,7 @@ interface LocationSelectorProps {
   onReset?: () => void;
 }
 
-const LocationSelection: React.FC<LocationSelectorProps> = ({ onConfirm, onReset }) => {
+const LocationSelector: React.FC<LocationSelectorProps> = ({ onConfirm, onReset }) => {
   // Use the location context instead of local state
   const { 
     states,
@@ -20,7 +20,6 @@ const LocationSelection: React.FC<LocationSelectorProps> = ({ onConfirm, onReset
     selectedState,
     selectedDistricts,
     selectedSubDistricts,
-    totalPopulation,
     selectionsLocked,
     isLoading,
     handleStateChange,
@@ -33,20 +32,20 @@ const LocationSelection: React.FC<LocationSelectorProps> = ({ onConfirm, onReset
   // Handle state selection from select input
   const handleStateSelect = (e: React.ChangeEvent<HTMLSelectElement>): void => {
     if (!selectionsLocked) {
-      handleStateChange(parseInt(e.target.value));
+      handleStateChange(e.target.value);
     }
   };
   
   // Handle multi-select changes
   const handleDistrictsChange = (selectedIds: string[]): void => {
     if (!selectionsLocked) {
-      setSelectedDistricts(selectedIds.map(id => parseInt(id)));
+      setSelectedDistricts(selectedIds);
     }
   };
   
   const handleSubDistrictsChange = (selectedIds: string[]): void => {
     if (!selectionsLocked) {
-      setSelectedSubDistricts(selectedIds.map(id => parseInt(id)));
+      setSelectedSubDistricts(selectedIds);
     }
   };
   
@@ -74,31 +73,22 @@ const LocationSelection: React.FC<LocationSelectorProps> = ({ onConfirm, onReset
   
   // Format sub-district display to include population
   const formatSubDistrictDisplay = (subDistrict: SubDistrict): string => {
-    return `${subDistrict.name} (Pop: ${subDistrict.population.toLocaleString()})`;
+    return `${subDistrict.name}`;
   };
   
   return (
-    <div className="bg-white rounded-md shadow-md p-6">
-      <h2 className="text-lg font-semibold text-gray-700 mb-6 pb-2 border-b border-gray-200">
-        Selection Criteria
-      </h2>
-
-      
-      {isLoading && (
-        <div className="text-center mb-4">
-          <p className="text-blue-600">Loading...</p>
-        </div>
-      )}
-      
-      <div className="grid grid-cols-3 gap-4 mb-6">
+    <div className="p-4 bg-white rounded-lg shadow-md">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
         {/* State Dropdown */}
-        <div className="flex flex-col gap-2">
-          <label htmlFor="state" className="text-sm font-medium text-gray-700">State:</label>
-          <select 
-            id="state" 
+        <div>
+          <label htmlFor="state-dropdown" className="block text-sm font-semibold text-gray-700 mb-2">
+            State:
+          </label>
+          <select
+            id="state-dropdown"
+            className="w-full p-2 text-sm border border-blue-500 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             value={selectedState || ''}
             onChange={handleStateSelect}
-            className="p-2 border border-blue-500 rounded-md text-sm"
             disabled={selectionsLocked || isLoading}
           >
             <option value="">--Choose a State--</option>
@@ -109,8 +99,8 @@ const LocationSelection: React.FC<LocationSelectorProps> = ({ onConfirm, onReset
             ))}
           </select>
         </div>
-        
-        {/* District MultiSelect */}
+
+        {/* District Multiselect */}
         <MultiSelect
           items={districts}
           selectedItems={selectedDistricts}
@@ -119,8 +109,8 @@ const LocationSelection: React.FC<LocationSelectorProps> = ({ onConfirm, onReset
           placeholder="--Choose Districts--"
           disabled={!selectedState || selectionsLocked || isLoading}
         />
-        
-        {/* Sub-District MultiSelect */}
+
+        {/* Sub-District Multiselect */}
         <MultiSelect
           items={subDistricts}
           selectedItems={selectedSubDistricts}
@@ -131,50 +121,30 @@ const LocationSelection: React.FC<LocationSelectorProps> = ({ onConfirm, onReset
           displayPattern={formatSubDistrictDisplay}
         />
       </div>
-      
-      <div className="bg-gray-50 rounded-md p-4 mb-6">
-        <h3 className="text-base font-medium mb-3">Selected Locations</h3>
-        <div className="flex mb-2 text-sm">
-          <span className="font-medium text-gray-700 w-32">State:</span> 
-          <span>{states.find(s => s.id === selectedState)?.name || 'None'}</span>
+
+      {/* Display selected values for demonstration */}
+      <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+        <h3 className="text-md font-medium text-gray-800 mb-2">Selected Locations</h3>
+        <div className="space-y-2 text-sm text-gray-700">
+          <p><span className="font-medium">State:</span> {states.find(s => s.id.toString() === selectedState)?.name || 'None'}</p>
+          <p><span className="font-medium">Districts:</span> {selectedDistricts.length > 0 
+            ? (selectedDistricts.length === districts.length 
+              ? 'All Districts' 
+              : districts.filter(d => selectedDistricts.includes(d.id.toString())).map(d => d.name).join(', '))
+            : 'None'}</p>
+          <p><span className="font-medium">Sub-Districts:</span> {selectedSubDistricts.length > 0 
+            ? (selectedSubDistricts.length === subDistricts.length 
+              ? 'All Sub-Districts' 
+              : subDistricts.filter(sd => selectedSubDistricts.includes(sd.id.toString())).map(sd => sd.name).join(', '))
+            : 'None'}</p>
+          {selectionsLocked && (
+            <p className="mt-2 text-green-600 font-medium">Selections confirmed and locked</p>
+          )}
         </div>
-        <div className="flex mb-2 text-sm">
-          <span className="font-medium text-gray-700 w-32">Districts:</span> 
-          <span>
-            {selectedDistricts.length > 0 
-              ? districts
-                  .filter(d => selectedDistricts.includes(Number(d.id)))
-                  .map(d => d.name)
-                  .join(', ')
-              : 'None'
-            }
-          </span>
-        </div>
-        <div className="flex mb-2 text-sm">
-          <span className="font-medium text-gray-700 w-32">Sub-Districts:</span> 
-          <span>
-            {selectedSubDistricts.length > 0 
-              ? subDistricts
-                  .filter(sd => selectedSubDistricts.includes(Number(sd.id)))
-                  .map(sd => sd.name)
-                  .join(', ')
-              : 'None'
-            }
-          </span>
-        </div>
-        <div className="flex text-sm">
-          <span className="font-medium text-gray-700 w-32">Total Population:</span> 
-          <span>{totalPopulation.toLocaleString()}</span>
-        </div>
-        
-        {selectionsLocked && (
-          <div className="mt-2 text-green-600 font-medium">
-            Selections confirmed and locked
-          </div>
-        )}
       </div>
-      
-      <div className="flex gap-4">
+
+      {/* Action buttons */}
+      <div className="flex space-x-4 mt-4">
         <button 
           className={`${
             selectedSubDistricts.length > 0 && !selectionsLocked 
@@ -187,15 +157,22 @@ const LocationSelection: React.FC<LocationSelectorProps> = ({ onConfirm, onReset
           Confirm
         </button>
         <button 
-          className="bg-red-500 text-white px-6 py-2 rounded-md font-medium hover:bg-red-600 transition-colors"
+          className="bg-red-500 hover:bg-red-700 text-white py-2 px-4 rounded focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50"
           onClick={handleReset}
           disabled={isLoading}
         >
           Reset
         </button>
       </div>
+      
+      {/* Loading indicator */}
+      {isLoading && (
+        <div className="mt-4 text-center">
+          <p className="text-blue-600">Loading...</p>
+        </div>
+      )}
     </div>
   );
 };
 
-export default LocationSelection;
+export default LocationSelector;

@@ -2,14 +2,14 @@
 import React, { useState, useRef, useEffect } from 'react';
 
 interface Item {
-  id: number | string;
+  id: number;
   name: string;
   [key: string]: any; // For other properties
 }
 
 interface MultiSelectProps<T extends Item = Item> {
   items: T[];
-  selectedItems: number[] | string[];
+  selectedItems: string[];
   onSelectionChange: (selectedIds: string[]) => void;
   label: string;
   placeholder: string;
@@ -32,9 +32,6 @@ export const MultiSelect = <T extends Item = Item>({
   const searchInputRef = useRef<HTMLInputElement>(null);
   const allItemIds = items.map(item => item.id.toString());
   const allSelected = items.length > 0 && selectedItems.length === items.length;
-
-  // Convert selectedItems to strings for consistent comparison
-  const selectedItemsAsStrings = selectedItems.map(id => id.toString());
 
   // Filter items based on search query
   const filteredItems = items.filter(item => 
@@ -78,9 +75,7 @@ export const MultiSelect = <T extends Item = Item>({
   };
 
   // Handle select all
-  const handleSelectAll = (e: React.MouseEvent<HTMLDivElement> | React.ChangeEvent<HTMLInputElement>) => {
-    e.stopPropagation(); // Prevent event bubbling
-    
+  const handleSelectAll = () => {
     if (allSelected) {
       // If all are selected, deselect all
       onSelectionChange([]);
@@ -91,15 +86,13 @@ export const MultiSelect = <T extends Item = Item>({
   };
 
   // Handle item selection
-  const handleItemSelect = (e: React.MouseEvent<HTMLDivElement> | React.ChangeEvent<HTMLInputElement>, itemId: string) => {
-    e.stopPropagation(); // Prevent event bubbling
-    
-    if (selectedItemsAsStrings.includes(itemId)) {
+  const handleItemSelect = (itemId: string) => {
+    if (selectedItems.includes(itemId)) {
       // Item is already selected, remove it
-      onSelectionChange(selectedItemsAsStrings.filter(id => id !== itemId));
+      onSelectionChange(selectedItems.filter(id => id !== itemId));
     } else {
       // Item is not selected, add it
-      onSelectionChange([...selectedItemsAsStrings, itemId]);
+      onSelectionChange([...selectedItems, itemId]);
     }
   };
 
@@ -114,7 +107,7 @@ export const MultiSelect = <T extends Item = Item>({
     }
     
     if (selectedItems.length === 1) {
-      const selected = items.find(item => item.id.toString() === selectedItemsAsStrings[0]);
+      const selected = items.find(item => item.id.toString() === selectedItems[0]);
       return selected ? displayPattern(selected) : placeholder;
     }
     
@@ -193,7 +186,6 @@ export const MultiSelect = <T extends Item = Item>({
               checked={allSelected}
               onChange={handleSelectAll}
               className="mr-2"
-              onClick={(e) => e.stopPropagation()} // Prevent double handling
             />
             All {label}s
           </div>
@@ -206,29 +198,23 @@ export const MultiSelect = <T extends Item = Item>({
           )}
           
           {/* Individual items */}
-          {filteredItems.map(item => {
-            const itemId = item.id.toString();
-            const isSelected = selectedItemsAsStrings.includes(itemId);
-            
-            return (
-              <div
-                key={itemId}
-                className={`p-2 hover:bg-blue-100 cursor-pointer ${
-                  isSelected ? 'bg-blue-50' : ''
-                }`}
-                onClick={(e) => handleItemSelect(e, itemId)}
-              >
-                <input
-                  type="checkbox"
-                  checked={isSelected}
-                  onChange={(e) => handleItemSelect(e, itemId)}
-                  className="mr-2"
-                  onClick={(e) => e.stopPropagation()} // Prevent double handling
-                />
-                {displayPattern(item)}
-              </div>
-            );
-          })}
+          {filteredItems.map(item => (
+            <div
+              key={item.id}
+              className={`p-2 hover:bg-blue-100 cursor-pointer ${
+                selectedItems.includes(item.id.toString()) ? 'bg-blue-50' : ''
+              }`}
+              onClick={() => handleItemSelect(item.id.toString())}
+            >
+              <input
+                type="checkbox"
+                checked={selectedItems.includes(item.id.toString())}
+                onChange={() => handleItemSelect(item.id.toString())}
+                className="mr-2"
+              />
+              {displayPattern(item)}
+            </div>
+          ))}
         </div>
       )}
     </div>
